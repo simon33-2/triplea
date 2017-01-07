@@ -32,6 +32,7 @@ import games.strategy.triplea.TripleAUnit;
 import games.strategy.triplea.attachments.PlayerAttachment;
 import games.strategy.triplea.attachments.TerritoryAttachment;
 import games.strategy.triplea.attachments.UnitAttachment;
+import games.strategy.triplea.delegate.IBattle;
 import games.strategy.triplea.delegate.IBattle.BattleType;
 import games.strategy.triplea.delegate.IBattle.WhoWon;
 import games.strategy.triplea.delegate.dataObjects.BattleListing;
@@ -101,6 +102,75 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
       m_needToAddBombardmentSources = false;
     }
     m_battleTracker.raids(m_bridge);
+
+    Collection<IBattle> battleList = new ArrayList<>();
+
+    // Remove air raids - this adds all the bombing raids to the battle tracker
+    for( final Territory t : m_battleTracker.getPendingBattleSites(true) ) {
+      battleList.add( m_battleTracker.getPendingBattle( t, true, BattleType.BOMBING_RAID ) );
+    }
+
+    // Kill undefended transports. Done here to remove potentially dependent sea battles below
+    for( final Territory t : m_battleTracker.getPendingBattleSites(false) ) {  // Loop through normal combats i.e. not bombing or air raid
+      final IBattle battle = m_battleTracker.getPendingBattle(t, false, BattleType.NORMAL);
+      if( m_battleTracker.getDependentOn(battle).isEmpty() 
+          && Match.allMatch( battle.getDefendingUnits(), Matches.UnitIsTransportButNotCombatTransport) ) {
+        battle.fight( m_bridge );           // Must be fought here to remove dependencies
+      }
+    }
+
+    // Fight all amphibious assaults with no retreat option for the attacker and no sea combat - these have no real attacker decisions
+    // Also remove all remaining defenseless fights by fighting them
+    int battleCount = 0;
+    int amphibCount = 0;
+    IBattle lastAmphib = null;
+    for( final Territory t : m_battleTracker.getPendingNonSBRSites() ) {  // Loop through normal combats i.e. not bombing or air raid
+      final IBattle battle = m_battleTracker.getPendingBattle(t, false, BattleType.NORMAL);
+      if( battle instanceof NonFightingBattle && m_battleTracker.getDependentOn(battle).isEmpty() ) {
+        battleList.add( battle );         // Remove non fighting battles by fighting them automatically. Conveniently done here.
+        continue;
+      } else if (!(battle instanceof MustFightBattle) ) {
+        continue;
+      }
+      battleCount++;
+      
+      if( battle.isAmphibious() ) {
+        // If there is no dependent sea battle and no retreat, fight it now 
+        if( m_battleTracker.getDependentOn(battle).isEmpty() && !( (MustFightBattle) battle).canAnyAttackersRetreat() ) {
+          battleList.add( battle );
+        } else {
+          amphibCount++;
+          lastAmphib = battle;      // Otherwise store it to see if it can be fought later i.e. if there's only one
+        }
+      }
+    }
+
+    // Fight amphibious assault if there is one remaining. Fight naval battles in random order if prerequisites first.
+    if( amphibCount == 1 ) {
+      // are there battles that must occur first
+      for( final IBattle seaBattle : m_battleTracker.getDependentOn( lastAmphib ) ) {
+        if( seaBattle instanceof MustFightBattle && seaBattle != null ) {
+          battleList.add( seaBattle );
+          battleCount--;
+        }
+      }
+      battleList.add( lastAmphib );
+      battleCount--;
+      
+    }
+
+    battleList.forEach( battle -> battle.fight( m_bridge ) );
+
+    if( battleCount == 1 ) {  // If there is only one remaining normal combat, fight it here rather than requiring the user to click it.
+      // This needs another loop just in case the last otherBattleCount was triggered by a sea combat already fought
+      for( final Territory t : m_battleTracker.getPendingBattleSites(false) ) {  // Will only find one
+        final IBattle lastBattle = m_battleTracker.getPendingBattle( t, false, BattleType.NORMAL );
+        if( lastBattle instanceof MustFightBattle ) {
+          //battleList.add( lastBattle );
+          lastBattle.fight( m_bridge );
+        }
+      }
+    }
   }
 
   /**
