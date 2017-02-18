@@ -1095,7 +1095,6 @@ public class BattleTracker implements java.io.Serializable {
     }
   }
 
-
   /**
    * 'Auto-fight' all of the air battles and strategic bombing runs.
    * Auto fight means we automatically begin the fight without user action. This is to avoid clicks during the
@@ -1138,5 +1137,19 @@ public class BattleTracker implements java.io.Serializable {
   public String toString() {
     return "BattleTracker:" + "\n" + "Conquered:" + m_conquered + "\n" + "Blitzed:" + m_blitzed + "\n" + "Fought:"
         + m_foughBattles + "\n" + "Pending:" + m_pendingBattles;
+  }
+  
+  /**
+   * @return a collection of territories where strategic bombing raid battles are pending
+   */
+  public Collection<Territory> getPendingSBRSites() {
+    return getPendingBattleSites(true);
+  }
+
+  /**
+   * @return a collection of territories where non strategic bombing raid battles are pending
+   */
+  public Collection<Territory> getPendingNonSBRSites() {
+    return getPendingBattleSites(false);
   }
 }
