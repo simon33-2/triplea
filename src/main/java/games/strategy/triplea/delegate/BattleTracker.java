@@ -53,7 +53,7 @@ import games.strategy.util.Match;
 import games.strategy.util.Tuple;
 
 /**
- * Used to keep track of where battles have occurred
+ * Used to keep track of where battles have occurred.
  */
 public class BattleTracker implements java.io.Serializable {
   private static final long serialVersionUID = 8806010984321554662L;
@@ -88,7 +88,7 @@ public class BattleTracker implements java.io.Serializable {
 
   /**
    * @param t
-   *        referring territory
+   *        referring territory.
    * @param bombing
    * @return whether a battle is to be fought in the given territory
    */
@@ -109,7 +109,7 @@ public class BattleTracker implements java.io.Serializable {
 
   /**
    * @param t
-   *        referring territory
+   *        referring territory.
    * @return whether territory was conquered
    */
   public boolean wasConquered(final Territory t) {
@@ -122,7 +122,7 @@ public class BattleTracker implements java.io.Serializable {
 
   /**
    * @param t
-   *        referring territory
+   *        referring territory.
    * @return whether territory was conquered by blitz
    */
   public boolean wasBlitzed(final Territory t) {
@@ -946,7 +946,7 @@ public class BattleTracker implements java.io.Serializable {
 
   /**
    * @param bombing
-   *        whether only battles where there is bombing
+   *        whether only battles where there is bombing.
    * @return a collection of territories where battles are pending
    */
   public Collection<Territory> getPendingBattleSites(final boolean bombing) {
@@ -978,7 +978,7 @@ public class BattleTracker implements java.io.Serializable {
 
   /**
    * @param blocked
-   *        the battle that is blocked
+   *        the battle that is blocked.
    * @return the battle that must occur before dependent can occur
    */
   public Collection<IBattle> getDependentOn(final IBattle blocked) {
@@ -991,7 +991,7 @@ public class BattleTracker implements java.io.Serializable {
 
   /**
    * @param blocking
-   *        the battle that is blocking the other battles
+   *        the battle that is blocking the other battles.
    * @return the battles that cannot occur until the given battle occurs
    */
   public Collection<IBattle> getBlocked(final IBattle blocking) {
