@@ -62,13 +62,13 @@ public class UserActionDelegate extends BaseTripleADelegate implements IUserActi
 
   public HashMap<ICondition, Boolean> getTestedConditions() {
     final HashSet<ICondition> allConditionsNeeded = AbstractConditionsAttachment.getAllConditionsRecursive(
-        new HashSet<>(UserActionAttachment.getUserActionAttachments(m_player)), null);
-    return AbstractConditionsAttachment.testAllConditionsRecursive(allConditionsNeeded, null, m_bridge);
+        new HashSet<>(UserActionAttachment.getUserActionAttachments(player)), null);
+    return AbstractConditionsAttachment.testAllConditionsRecursive(allConditionsNeeded, null, bridge);
   }
 
   @Override
   public Collection<UserActionAttachment> getValidActions() {
-    final GameData data = m_bridge.getData();
+    final GameData data = bridge.getData();
     final HashMap<ICondition, Boolean> testedConditions;
     data.acquireReadLock();
     try {
@@ -76,7 +76,7 @@ public class UserActionDelegate extends BaseTripleADelegate implements IUserActi
     } finally {
       data.releaseReadLock();
     }
-    return UserActionAttachment.getValidActions(m_player, testedConditions, data);
+    return UserActionAttachment.getValidActions(player, testedConditions, data);
   }
 
   @Override
@@ -119,7 +119,7 @@ public class UserActionDelegate extends BaseTripleADelegate implements IUserActi
   private boolean checkEnoughMoney(final UserActionAttachment uaa) {
     final Resource PUs = getData().getResourceList().getResource(Constants.PUS);
     final int cost = uaa.getCostPU();
-    final int has = m_bridge.getPlayerID().getResources().getQuantity(PUs);
+    final int has = bridge.getPlayerID().getResources().getQuantity(PUs);
     return has >= cost;
   }
 
@@ -135,16 +135,16 @@ public class UserActionDelegate extends BaseTripleADelegate implements IUserActi
     if (cost > 0) {
       // don't notify user of spending money anymore
       // notifyMoney(uaa, true);
-      final String transcriptText = m_bridge.getPlayerID().getName() + " spend " + cost + " PU on User Action: "
+      final String transcriptText = bridge.getPlayerID().getName() + " spend " + cost + " PU on User Action: "
           + MyFormatter.attachmentNameToText(uaa.getName());
-      m_bridge.getHistoryWriter().startEvent(transcriptText);
-      final Change charge = ChangeFactory.changeResourcesChange(m_bridge.getPlayerID(), PUs, -cost);
-      m_bridge.addChange(charge);
+      bridge.getHistoryWriter().startEvent(transcriptText);
+      final Change charge = ChangeFactory.changeResourcesChange(bridge.getPlayerID(), PUs, -cost);
+      bridge.addChange(charge);
     } else {
       final String transcriptText =
-          m_bridge.getPlayerID().getName() + " takes action: " + MyFormatter.attachmentNameToText(uaa.getName());
+          bridge.getPlayerID().getName() + " takes action: " + MyFormatter.attachmentNameToText(uaa.getName());
       // we must start an event anyway
-      m_bridge.getHistoryWriter().startEvent(transcriptText);
+      bridge.getHistoryWriter().startEvent(transcriptText);
     }
   }
 
@@ -157,20 +157,20 @@ public class UserActionDelegate extends BaseTripleADelegate implements IUserActi
     final int hitTarget = uaa.getChanceToHit();
     final int diceSides = uaa.getChanceDiceSides();
     if (diceSides <= 0 || hitTarget >= diceSides) {
-      uaa.changeChanceDecrementOrIncrementOnSuccessOrFailure(m_bridge, true, true);
+      uaa.changeChanceDecrementOrIncrementOnSuccessOrFailure(bridge, true, true);
       return true;
     } else if (hitTarget <= 0) {
-      uaa.changeChanceDecrementOrIncrementOnSuccessOrFailure(m_bridge, false, true);
+      uaa.changeChanceDecrementOrIncrementOnSuccessOrFailure(bridge, false, true);
       return false;
     }
-    final int rollResult = m_bridge.getRandom(diceSides, m_player, DiceType.NONCOMBAT,
+    final int rollResult = bridge.getRandom(diceSides, player, DiceType.NONCOMBAT,
         "Attempting the User Action: " + MyFormatter.attachmentNameToText(uaa.getName())) + 1;
     final boolean success = rollResult <= hitTarget;
     final String notificationMessage = "rolling (" + hitTarget + " out of " + diceSides + ") result: " + rollResult
         + " = " + (success ? "Success!" : "Failure!");
-    m_bridge.getHistoryWriter()
+    bridge.getHistoryWriter()
         .addChildToEvent(MyFormatter.attachmentNameToText(uaa.getName()) + " : " + notificationMessage);
-    uaa.changeChanceDecrementOrIncrementOnSuccessOrFailure(m_bridge, success, true);
+    uaa.changeChanceDecrementOrIncrementOnSuccessOrFailure(bridge, success, true);
     sendNotification(notificationMessage);
     return success;
   }
@@ -184,7 +184,7 @@ public class UserActionDelegate extends BaseTripleADelegate implements IUserActi
    */
   private boolean actionIsAccepted(final UserActionAttachment uaa) {
     for (final PlayerID player : uaa.getActionAccept()) {
-      if (!(getRemotePlayer(player)).acceptAction(m_player,
+      if (!(getRemotePlayer(player)).acceptAction(player,
           UserActionText.getInstance().getAcceptanceQuestion(uaa.getText()), false)) {
         return false;
       }
@@ -199,7 +199,7 @@ public class UserActionDelegate extends BaseTripleADelegate implements IUserActi
    *        the UserActionAttachment to activate triggers for
    */
   private void activateTriggers(final UserActionAttachment uaa) {
-    UserActionAttachment.fireTriggers(uaa, getTestedConditions(), m_bridge);
+    UserActionAttachment.fireTriggers(uaa, getTestedConditions(), bridge);
   }
 
   /**
@@ -210,7 +210,7 @@ public class UserActionDelegate extends BaseTripleADelegate implements IUserActi
    */
   private void notifySuccess(final UserActionAttachment uaa) {
     // play a sound
-    getSoundChannel().playSoundForAll(SoundPath.CLIP_USER_ACTION_SUCCESSFUL, m_player);
+    getSoundChannel().playSoundForAll(SoundPath.CLIP_USER_ACTION_SUCCESSFUL, player);
     sendNotification(UserActionText.getInstance().getNotificationSucccess(uaa.getText()));
     notifyOtherPlayers(uaa, UserActionText.getInstance().getNotificationSuccessOthers(uaa.getText()));
   }
@@ -239,7 +239,7 @@ public class UserActionDelegate extends BaseTripleADelegate implements IUserActi
     if (!"NONE".equals(notification)) {
       // we can send it to just uaa.getOtherPlayers(), or we can send it to all players. both are good options.
       final Collection<PlayerID> currentPlayer = new ArrayList<>();
-      currentPlayer.add(m_player);
+      currentPlayer.add(player);
       final Collection<PlayerID> otherPlayers = getData().getPlayerList().getPlayers();
       otherPlayers.removeAll(currentPlayer);
       this.getDisplay().reportMessageToPlayers(otherPlayers, currentPlayer, notification, notification);
@@ -254,10 +254,10 @@ public class UserActionDelegate extends BaseTripleADelegate implements IUserActi
    */
   private void notifyFailure(final UserActionAttachment uaa) {
     // play a sound
-    getSoundChannel().playSoundForAll(SoundPath.CLIP_USER_ACTION_FAILURE, m_player);
+    getSoundChannel().playSoundForAll(SoundPath.CLIP_USER_ACTION_FAILURE, player);
     final String transcriptText =
-        m_bridge.getPlayerID().getName() + " fails on action: " + MyFormatter.attachmentNameToText(uaa.getName());
-    m_bridge.getHistoryWriter().addChildToEvent(transcriptText);
+        bridge.getPlayerID().getName() + " fails on action: " + MyFormatter.attachmentNameToText(uaa.getName());
+    bridge.getHistoryWriter().addChildToEvent(transcriptText);
     sendNotification(UserActionText.getInstance().getNotificationFailure(uaa.getText()));
     notifyOtherPlayers(uaa, UserActionText.getInstance().getNotificationFailureOthers(uaa.getText()));
   }
@@ -290,7 +290,7 @@ public class UserActionDelegate extends BaseTripleADelegate implements IUserActi
    * try again for a number of attempts.
    */
   private void resetAttempts() {
-    for (final UserActionAttachment uaa : UserActionAttachment.getUserActionAttachments(m_player)) {
+    for (final UserActionAttachment uaa : UserActionAttachment.getUserActionAttachments(player)) {
       uaa.resetAttempts(getBridge());
     }
   }

@@ -132,15 +132,15 @@ public class GameStepPropertiesHelper {
    * Fire rockets after phase is over. Normally would occur after combat move for WW2v2 and WW2v3, and after noncombat
    * move for WW2v1.
    */
-  static boolean isFireRockets(final GameData data, final boolean moveDelegate) {
+  static boolean isFireRockets(final GameData data,final BaseTripleADelegate caller) {
     final boolean isFireRockets;
     data.acquireReadLock();
     try {
       final String prop = data.getSequence().getStep().getProperties().getProperty(GameStep.PROPERTY_fireRockets);
-      if (prop != null && moveDelegate) {
+      if (prop != null && caller instanceof MoveDelegate) {
         isFireRockets = Boolean.parseBoolean(prop);
       } else if (games.strategy.triplea.Properties.getWW2V2(data) || games.strategy.triplea.Properties.getWW2V3(data)) {
-        isFireRockets = !moveDelegate;         //ww2v2/3 we don't fire in combat move
+        isFireRockets = caller instanceof BattleDelegate;         //ww2v2/3 we fire in battle rather than move
       } else {
         isFireRockets = isNonCombatDelegate(data);
       }

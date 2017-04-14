@@ -27,7 +27,7 @@ import games.strategy.util.Util;
  */
 @MapSupport
 public class TechActivationDelegate extends BaseTripleADelegate {
-  private boolean m_needToInitialize = true;
+  private boolean needToInitialize = true;
 
   /** Creates new TechActivationDelegate. */
   public TechActivationDelegate() {}
@@ -40,22 +40,22 @@ public class TechActivationDelegate extends BaseTripleADelegate {
   public void start() {
     super.start();
     final GameData data = getData();
-    if (!m_needToInitialize) {
+    if (!needToInitialize) {
       return;
     }
     // Activate techs
     final Map<PlayerID, Collection<TechAdvance>> techMap = DelegateFinder.techDelegate(data).getAdvances();
-    final Collection<TechAdvance> advances = techMap.get(m_player);
+    final Collection<TechAdvance> advances = techMap.get(player);
     if ((advances != null) && (advances.size() > 0)) {
       // Start event
-      m_bridge.getHistoryWriter().startEvent(m_player.getName() + " activating " + advancesAsString(advances));
+      bridge.getHistoryWriter().startEvent(player.getName() + " activating " + advancesAsString(advances));
       for (final TechAdvance advance : advances) {
         // advance.perform(m_bridge.getPlayerID(), m_bridge, m_data);
-        TechTracker.addAdvance(m_player, m_bridge, advance);
+        TechTracker.addAdvance(player, bridge, advance);
       }
     }
     // empty
-    techMap.put(m_player, null);
+    techMap.put(player, null);
     if (games.strategy.triplea.Properties.getTriggers(data)) {
       // First set up a match for what we want to have fire as a default in this delegate. List out as a composite match
       // OR.
@@ -66,29 +66,29 @@ public class TechActivationDelegate extends BaseTripleADelegate {
               TriggerAttachment.supportMatch()));
       // get all possible triggers based on this match.
       final HashSet<TriggerAttachment> toFirePossible = TriggerAttachment.collectForAllTriggersMatching(
-          new HashSet<>(Collections.singleton(m_player)), techActivationDelegateTriggerMatch, m_bridge);
+          new HashSet<>(Collections.singleton(player)), techActivationDelegateTriggerMatch, bridge);
       if (!toFirePossible.isEmpty()) {
         // get all conditions possibly needed by these triggers, and then test them.
         final HashMap<ICondition, Boolean> testedConditions =
-            TriggerAttachment.collectTestsForAllTriggers(toFirePossible, m_bridge);
+            TriggerAttachment.collectTestsForAllTriggers(toFirePossible, bridge);
         // get all triggers that are satisfied based on the tested conditions.
         final Set<TriggerAttachment> toFireTestedAndSatisfied = new HashSet<>(
             Match.getMatches(toFirePossible, TriggerAttachment.isSatisfiedMatch(testedConditions)));
         // now list out individual types to fire, once for each of the matches above.
-        TriggerAttachment.triggerUnitPropertyChange(toFireTestedAndSatisfied, m_bridge, null, null, true, true, true,
+        TriggerAttachment.triggerUnitPropertyChange(toFireTestedAndSatisfied, bridge, null, null, true, true, true,
             true);
-        TriggerAttachment.triggerTechChange(toFireTestedAndSatisfied, m_bridge, null, null, true, true, true, true);
-        TriggerAttachment.triggerSupportChange(toFireTestedAndSatisfied, m_bridge, null, null, true, true, true, true);
+        TriggerAttachment.triggerTechChange(toFireTestedAndSatisfied, bridge, null, null, true, true, true, true);
+        TriggerAttachment.triggerSupportChange(toFireTestedAndSatisfied, bridge, null, null, true, true, true, true);
       }
     }
     shareTechnology();
-    m_needToInitialize = false;
+    needToInitialize = false;
   }
 
   @Override
   public void end() {
     super.end();
-    m_needToInitialize = true;
+    needToInitialize = true;
   }
 
   @Override
@@ -97,7 +97,7 @@ public class TechActivationDelegate extends BaseTripleADelegate {
   }
 
   private void shareTechnology() {
-    final PlayerAttachment pa = PlayerAttachment.get(m_player);
+    final PlayerAttachment pa = PlayerAttachment.get(player);
     if (pa == null) {
       return;
     }
@@ -106,16 +106,16 @@ public class TechActivationDelegate extends BaseTripleADelegate {
       return;
     }
     final GameData data = getData();
-    final Collection<TechAdvance> currentAdvances = TechTracker.getCurrentTechAdvances(m_player, data);
+    final Collection<TechAdvance> currentAdvances = TechTracker.getCurrentTechAdvances(player, data);
     for (final PlayerID p : shareWith) {
       final Collection<TechAdvance> availableTechs = TechnologyDelegate.getAvailableTechs(p, data);
       final Collection<TechAdvance> toGive = Util.intersection(currentAdvances, availableTechs);
       if (!toGive.isEmpty()) {
         // Start event
-        m_bridge.getHistoryWriter()
-            .startEvent(m_player.getName() + " giving technology to " + p.getName() + ": " + advancesAsString(toGive));
+        bridge.getHistoryWriter()
+            .startEvent(player.getName() + " giving technology to " + p.getName() + ": " + advancesAsString(toGive));
         for (final TechAdvance advance : toGive) {
-          TechTracker.addAdvance(p, m_bridge, advance);
+          TechTracker.addAdvance(p, bridge, advance);
         }
       }
     }
@@ -125,7 +125,7 @@ public class TechActivationDelegate extends BaseTripleADelegate {
   public Serializable saveState() {
     final TechActivationExtendedDelegateState state = new TechActivationExtendedDelegateState();
     state.superState = super.saveState();
-    state.m_needToInitialize = m_needToInitialize;
+    state.needToInitialize = needToInitialize;
     return state;
   }
 
@@ -133,7 +133,7 @@ public class TechActivationDelegate extends BaseTripleADelegate {
   public void loadState(final Serializable state) {
     final TechActivationExtendedDelegateState s = (TechActivationExtendedDelegateState) state;
     super.loadState(s.superState);
-    m_needToInitialize = s.m_needToInitialize;
+    needToInitialize = s.needToInitialize;
   }
 
   // Return string representing all advances in collection
@@ -165,5 +165,5 @@ public class TechActivationDelegate extends BaseTripleADelegate {
 class TechActivationExtendedDelegateState implements Serializable {
   private static final long serialVersionUID = 1742776261442260882L;
   Serializable superState;
-  public boolean m_needToInitialize;
+  public boolean needToInitialize;
 }

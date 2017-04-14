@@ -39,7 +39,7 @@ import games.strategy.util.Match;
  */
 @MapSupport
 public class SpecialMoveDelegate extends AbstractMoveDelegate {
-  private boolean m_needToInitialize = true;
+  private boolean needToInitialize = true;
 
   // private boolean m_allowAirborne = true;
   public SpecialMoveDelegate() {}
@@ -56,30 +56,30 @@ public class SpecialMoveDelegate extends AbstractMoveDelegate {
   public void start() {
     super.start();
     final GameData data = getData();
-    if (!allowAirborne(m_player, data)) {
+    if (!allowAirborne(player, data)) {
       return;
     }
     final boolean onlyWhereUnderAttackAlready =
         games.strategy.triplea.Properties.getAirborneAttacksOnlyInExistingBattles(data);
     final BattleTracker battleTracker = AbstractMoveDelegate.getBattleTracker(data);
-    if (m_needToInitialize && onlyWhereUnderAttackAlready) {
+    if (needToInitialize && onlyWhereUnderAttackAlready) {
       // we do this to clear any 'finishedBattles' and also to create battles for units that didn't move
-      BattleDelegate.doInitialize(battleTracker, m_bridge);
-      m_needToInitialize = false;
+      BattleDelegate.doInitialize(battleTracker, bridge);
+      needToInitialize = false;
     }
   }
 
   @Override
   public void end() {
     super.end();
-    m_needToInitialize = true;
+    needToInitialize = true;
   }
 
   @Override
   public Serializable saveState() {
     final SpecialMoveExtendedDelegateState state = new SpecialMoveExtendedDelegateState();
     state.superState = super.saveState();
-    state.m_needToInitialize = m_needToInitialize;
+    state.needToInitialize = needToInitialize;
     return state;
   }
 
@@ -87,18 +87,18 @@ public class SpecialMoveDelegate extends AbstractMoveDelegate {
   public void loadState(final Serializable state) {
     final SpecialMoveExtendedDelegateState s = (SpecialMoveExtendedDelegateState) state;
     super.loadState(s.superState);
-    m_needToInitialize = s.m_needToInitialize;
+    needToInitialize = s.needToInitialize;
   }
 
   @Override
   public boolean delegateCurrentlyRequiresUserInput() {
-    return allowAirborne(m_player, getData());
+    return allowAirborne(player, getData());
   }
 
   @Override
   public String move(final Collection<Unit> units, final Route route, final Collection<Unit> transportsThatCanBeLoaded,
       final Map<Unit, Collection<Unit>> newDependents) {
-    if (!allowAirborne(m_player, getData())) {
+    if (!allowAirborne(player, getData())) {
       return "No Airborne Movement Allowed Yet";
     }
     final GameData data = getData();
@@ -108,7 +108,7 @@ public class SpecialMoveDelegate extends AbstractMoveDelegate {
     // here we have our own new validation method....
     final MoveValidationResult result =
         SpecialMoveDelegate.validateMove(units, route, player, transportsThatCanBeLoaded, newDependents,
-            GameStepPropertiesHelper.isNonCombatMove(data, false), m_movesToUndo, data);
+            GameStepPropertiesHelper.isNonCombatMove(data, false), movesToUndo, data);
     final StringBuilder errorMsg = new StringBuilder(100);
     final int numProblems = result.getTotalWarningCount() - (result.hasError() ? 0 : 1);
     final String numErrorsMsg =
@@ -124,7 +124,7 @@ public class SpecialMoveDelegate extends AbstractMoveDelegate {
     }
     // allow user to cancel move if aa guns will fire
     final AAInMoveUtil aaInMoveUtil = new AAInMoveUtil();
-    aaInMoveUtil.initialize(m_bridge);
+    aaInMoveUtil.initialize(bridge);
     final Collection<Territory> aaFiringTerritores = aaInMoveUtil.getTerritoriesWhereAAWillFire(route, units);
     if (!aaFiringTerritores.isEmpty()) {
       if (!getRemotePlayer().confirmMoveInFaceOfAA(aaFiringTerritores)) {
@@ -134,7 +134,7 @@ public class SpecialMoveDelegate extends AbstractMoveDelegate {
     // do the move
     final UndoableMove currentMove = new UndoableMove(units, route);
     // add dependencies (any move that came before this, from this start territory, is a dependency)
-    for (final UndoableMove otherMove : m_movesToUndo) {
+    for (final UndoableMove otherMove : movesToUndo) {
       if (otherMove.getStart().equals(route.getStart())) {
         currentMove.addDependency(otherMove);
       }
@@ -152,14 +152,14 @@ public class SpecialMoveDelegate extends AbstractMoveDelegate {
     // start event
     final String transcriptText = MyFormatter.unitsToTextNoOwner(units) + " moved from " + route.getStart().getName()
         + " to " + route.getEnd().getName();
-    m_bridge.getHistoryWriter().startEvent(transcriptText, currentMove.getDescriptionObject());
+    bridge.getHistoryWriter().startEvent(transcriptText, currentMove.getDescriptionObject());
     // actually do our special changes
-    m_bridge.addChange(airborneChange);
-    m_bridge.addChange(fillLaunchCapacity);
-    m_tempMovePerformer = new MovePerformer();
-    m_tempMovePerformer.initialize(this);
-    m_tempMovePerformer.moveUnits(units, route, player, transportsThatCanBeLoaded, newDependents, currentMove);
-    m_tempMovePerformer = null;
+    bridge.addChange(airborneChange);
+    bridge.addChange(fillLaunchCapacity);
+    tempMovePerformer = new MovePerformer();
+    tempMovePerformer.initialize(this);
+    tempMovePerformer.moveUnits(units, route, player, transportsThatCanBeLoaded, newDependents, currentMove);
+    tempMovePerformer = null;
     return null;
   }
 
@@ -358,5 +358,5 @@ public class SpecialMoveDelegate extends AbstractMoveDelegate {
 class SpecialMoveExtendedDelegateState implements Serializable {
   private static final long serialVersionUID = 7781410008392307104L;
   Serializable superState;
-  public boolean m_needToInitialize;
+  public boolean needToInitialize;
 }

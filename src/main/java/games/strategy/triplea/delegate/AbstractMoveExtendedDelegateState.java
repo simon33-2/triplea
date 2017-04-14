@@ -8,6 +8,6 @@ class AbstractMoveExtendedDelegateState implements Serializable {
   Serializable superState;
   // add other variables here:
   public boolean m_nonCombat;
-  public List<UndoableMove> m_movesToUndo;
-  public MovePerformer m_tempMovePerformer;
+  public List<UndoableMove> movesToUndo;
+  public MovePerformer tempMovePerformer;
 }

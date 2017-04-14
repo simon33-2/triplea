@@ -64,21 +64,21 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
           new CompositeMatchOr<TriggerAttachment>(TriggerAttachment.relationshipChangeMatch()));
       // get all possible triggers based on this match.
       final HashSet<TriggerAttachment> toFirePossible = TriggerAttachment.collectForAllTriggersMatching(
-          new HashSet<>(Collections.singleton(m_player)), politicsDelegateTriggerMatch, m_bridge);
+          new HashSet<>(Collections.singleton(player)), politicsDelegateTriggerMatch, bridge);
       if (!toFirePossible.isEmpty()) {
         // get all conditions possibly needed by these triggers, and then test them.
         final HashMap<ICondition, Boolean> testedConditions =
-            TriggerAttachment.collectTestsForAllTriggers(toFirePossible, m_bridge);
+            TriggerAttachment.collectTestsForAllTriggers(toFirePossible, bridge);
         // get all triggers that are satisfied based on the tested conditions.
         final Set<TriggerAttachment> toFireTestedAndSatisfied = new HashSet<>(
             Match.getMatches(toFirePossible, TriggerAttachment.isSatisfiedMatch(testedConditions)));
         // now list out individual types to fire, once for each of the matches above.
-        TriggerAttachment.triggerRelationshipChange(toFireTestedAndSatisfied, m_bridge, null, null, true, true, true,
+        TriggerAttachment.triggerRelationshipChange(toFireTestedAndSatisfied, bridge, null, null, true, true, true,
             true);
       }
     }
-    chainAlliancesTogether(m_bridge);
-    givesBackOriginalTerritories(m_bridge);
+    chainAlliancesTogether(bridge);
+    givesBackOriginalTerritories(bridge);
     // m_needToInitialize = true;
   }
 
@@ -97,7 +97,7 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
 
   @Override
   public boolean delegateCurrentlyRequiresUserInput() {
-    if (!m_player.amNotDeadYet(getData())) {
+    if (!player.amNotDeadYet(getData())) {
       return false;
     }
     if (!games.strategy.triplea.Properties.getUsePolitics(getData())) {
@@ -108,13 +108,13 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
 
   public HashMap<ICondition, Boolean> getTestedConditions() {
     final HashSet<ICondition> allConditionsNeeded = RulesAttachment.getAllConditionsRecursive(
-        new HashSet<>(PoliticalActionAttachment.getPoliticalActionAttachments(m_player)), null);
-    return RulesAttachment.testAllConditionsRecursive(allConditionsNeeded, null, m_bridge);
+        new HashSet<>(PoliticalActionAttachment.getPoliticalActionAttachments(player)), null);
+    return RulesAttachment.testAllConditionsRecursive(allConditionsNeeded, null, bridge);
   }
 
   @Override
   public Collection<PoliticalActionAttachment> getValidActions() {
-    final GameData data = m_bridge.getData();
+    final GameData data = bridge.getData();
     final HashMap<ICondition, Boolean> testedConditions;
     data.acquireReadLock();
     try {
@@ -122,7 +122,7 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
     } finally {
       data.releaseReadLock();
     }
-    return PoliticalActionAttachment.getValidActions(m_player, testedConditions, data);
+    return PoliticalActionAttachment.getValidActions(player, testedConditions, data);
   }
 
   @Override
@@ -187,7 +187,7 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
     if (!games.strategy.triplea.Properties.getAlliancesCanChainTogether(data)
         || !intoAlliedChainOrIntoOrOutOfWar.match(paa)) {
       for (final PlayerID player : paa.getActionAccept()) {
-        if (!(getRemotePlayer(player)).acceptAction(m_player,
+        if (!(getRemotePlayer(player)).acceptAction(player,
             PoliticsText.getInstance().getAcceptanceQuestion(paa.getText()), true)) {
           return false;
         }
@@ -197,7 +197,7 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
       final LinkedHashSet<PlayerID> playersWhoNeedToAccept = new LinkedHashSet<>();
       playersWhoNeedToAccept.addAll(paa.getActionAccept());
       playersWhoNeedToAccept.addAll(Match.getMatches(data.getPlayerList().getPlayers(),
-          Matches.isAlliedAndAlliancesCanChainTogether(m_player, data)));
+          Matches.isAlliedAndAlliancesCanChainTogether(player, data)));
       for (final PlayerID player : paa.getActionAccept()) {
         playersWhoNeedToAccept.addAll(Match.getMatches(data.getPlayerList().getPlayers(),
             Matches.isAlliedAndAlliancesCanChainTogether(player, data)));
@@ -207,20 +207,20 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
       for (final PlayerID player : playersWhoNeedToAccept) {
         String actionText = PoliticsText.getInstance().getAcceptanceQuestion(paa.getText());
         if (actionText.equals("NONE")) {
-          actionText = m_player.getName() + " wants to take the following action: "
+          actionText = player.getName() + " wants to take the following action: "
               + MyFormatter.attachmentNameToText(paa.getName()) + " \r\n Do you approve?";
         } else {
-          actionText = m_player.getName() + " wants to take the following action: "
-              + MyFormatter.attachmentNameToText(paa.getName()) + ".  Do you approve? \r\n\r\n " + m_player.getName()
+          actionText = player.getName() + " wants to take the following action: "
+              + MyFormatter.attachmentNameToText(paa.getName()) + ".  Do you approve? \r\n\r\n " + player.getName()
               + " will ask " + MyFormatter.defaultNamedToTextList(paa.getActionAccept())
               + ", the following question: \r\n " + actionText;
         }
-        if (!(getRemotePlayer(player)).acceptAction(m_player, actionText, true)) {
+        if (!(getRemotePlayer(player)).acceptAction(player, actionText, true)) {
           return false;
         }
       }
       for (final PlayerID player : paa.getActionAccept()) {
-        if (!(getRemotePlayer(player)).acceptAction(m_player,
+        if (!(getRemotePlayer(player)).acceptAction(player,
             PoliticsText.getInstance().getAcceptanceQuestion(paa.getText()), true)) {
           return false;
         }
@@ -273,16 +273,16 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
     if (cost > 0) {
       // don't notify user of spending money anymore
       // notifyMoney(paa, true);
-      final String transcriptText = m_bridge.getPlayerID().getName() + " spend " + cost + " PU on Political Action: "
+      final String transcriptText = bridge.getPlayerID().getName() + " spend " + cost + " PU on Political Action: "
           + MyFormatter.attachmentNameToText(paa.getName());
-      m_bridge.getHistoryWriter().startEvent(transcriptText);
-      final Change charge = ChangeFactory.changeResourcesChange(m_bridge.getPlayerID(), PUs, -cost);
-      m_bridge.addChange(charge);
+      bridge.getHistoryWriter().startEvent(transcriptText);
+      final Change charge = ChangeFactory.changeResourcesChange(bridge.getPlayerID(), PUs, -cost);
+      bridge.addChange(charge);
     } else {
-      final String transcriptText = m_bridge.getPlayerID().getName() + " takes Political Action: "
+      final String transcriptText = bridge.getPlayerID().getName() + " takes Political Action: "
           + MyFormatter.attachmentNameToText(paa.getName());
       // we must start an event anyway
-      m_bridge.getHistoryWriter().startEvent(transcriptText);
+      bridge.getHistoryWriter().startEvent(transcriptText);
     }
   }
 
@@ -294,7 +294,7 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
   private boolean checkEnoughMoney(final PoliticalActionAttachment paa) {
     final Resource PUs = getData().getResourceList().getResource(Constants.PUS);
     final int cost = paa.getCostPU();
-    final int has = m_bridge.getPlayerID().getResources().getQuantity(PUs);
+    final int has = bridge.getPlayerID().getResources().getQuantity(PUs);
     return has >= cost;
   }
 
@@ -305,10 +305,10 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
    *        the political action attachment that just failed.
    */
   private void notifyFailure(final PoliticalActionAttachment paa) {
-    getSoundChannel().playSoundForAll(SoundPath.CLIP_POLITICAL_ACTION_FAILURE, m_player);
+    getSoundChannel().playSoundForAll(SoundPath.CLIP_POLITICAL_ACTION_FAILURE, player);
     final String transcriptText =
-        m_bridge.getPlayerID().getName() + " fails on action: " + MyFormatter.attachmentNameToText(paa.getName());
-    m_bridge.getHistoryWriter().addChildToEvent(transcriptText);
+        bridge.getPlayerID().getName() + " fails on action: " + MyFormatter.attachmentNameToText(paa.getName());
+    bridge.getHistoryWriter().addChildToEvent(transcriptText);
     sendNotification(PoliticsText.getInstance().getNotificationFailure(paa.getText()));
     notifyOtherPlayers(PoliticsText.getInstance().getNotificationFailureOthers(paa.getText()));
   }
@@ -319,7 +319,7 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
    * @param paa the political action attachment that just succeeded.
    */
   private void notifySuccess(final PoliticalActionAttachment paa) {
-    getSoundChannel().playSoundForAll(SoundPath.CLIP_POLITICAL_ACTION_SUCCESSFUL, m_player);
+    getSoundChannel().playSoundForAll(SoundPath.CLIP_POLITICAL_ACTION_SUCCESSFUL, player);
     sendNotification(PoliticsText.getInstance().getNotificationSucccess(paa.getText()));
     notifyOtherPlayers(PoliticsText.getInstance().getNotificationSuccessOthers(paa.getText()));
   }
@@ -332,7 +332,7 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
     if (!"NONE".equals(notification)) {
       // we can send it to just paa.getOtherPlayers(), or we can send it to all players. both are good options.
       final Collection<PlayerID> currentPlayer = new ArrayList<>();
-      currentPlayer.add(m_player);
+      currentPlayer.add(player);
       final Collection<PlayerID> otherPlayers = getData().getPlayerList().getPlayers();
       otherPlayers.removeAll(currentPlayer);
       this.getDisplay().reportMessageToPlayers(otherPlayers, currentPlayer, notification, notification);
@@ -358,8 +358,8 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
    *        the political action to change the relationships for
    */
   private void changeRelationships(final PoliticalActionAttachment paa) {
-    getMyselfOutOfAlliance(paa, m_player, m_bridge);
-    getNeutralOutOfWarWithAllies(paa, m_player, m_bridge);
+    getMyselfOutOfAlliance(paa, player, bridge);
+    getNeutralOutOfWarWithAllies(paa, player, bridge);
     final CompositeChange change = new CompositeChange();
     for (final String relationshipChange : paa.getRelationshipChange()) {
       final String[] s = relationshipChange.split(":");
@@ -371,8 +371,8 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
         continue;
       }
       change.add(ChangeFactory.relationshipChange(player1, player2, oldRelation, newRelation));
-      m_bridge.getHistoryWriter()
-          .addChildToEvent(m_bridge.getPlayerID().getName() + " succeeds on action: "
+      bridge.getHistoryWriter()
+          .addChildToEvent(bridge.getPlayerID().getName() + " succeeds on action: "
               + MyFormatter.attachmentNameToText(paa.getName()) + ": Changing Relationship for " + player1.getName()
               + " and " + player2.getName() + " from " + oldRelation.getName() + " to " + newRelation.getName());
       MoveDelegate.getBattleTracker(getData()).addRelationshipChangesThisTurn(player1, player2, oldRelation,
@@ -385,9 +385,9 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
        */
     }
     if (!change.isEmpty()) {
-      m_bridge.addChange(change);
+      bridge.addChange(change);
     }
-    chainAlliancesTogether(m_bridge);
+    chainAlliancesTogether(bridge);
   }
 
   /**
@@ -399,20 +399,20 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
     final int hitTarget = paa.getChanceToHit();
     final int diceSides = paa.getChanceDiceSides();
     if (diceSides <= 0 || hitTarget >= diceSides) {
-      paa.changeChanceDecrementOrIncrementOnSuccessOrFailure(m_bridge, true, true);
+      paa.changeChanceDecrementOrIncrementOnSuccessOrFailure(bridge, true, true);
       return true;
     } else if (hitTarget <= 0) {
-      paa.changeChanceDecrementOrIncrementOnSuccessOrFailure(m_bridge, false, true);
+      paa.changeChanceDecrementOrIncrementOnSuccessOrFailure(bridge, false, true);
       return false;
     }
-    final int rollResult = m_bridge.getRandom(diceSides, m_player, DiceType.NONCOMBAT,
+    final int rollResult = bridge.getRandom(diceSides, player, DiceType.NONCOMBAT,
         "Attempting the Political Action: " + MyFormatter.attachmentNameToText(paa.getName())) + 1;
     final boolean success = rollResult <= hitTarget;
     final String notificationMessage = "rolling (" + hitTarget + " out of " + diceSides + ") result: " + rollResult
         + " = " + (success ? "Success!" : "Failure!");
-    m_bridge.getHistoryWriter()
+    bridge.getHistoryWriter()
         .addChildToEvent(MyFormatter.attachmentNameToText(paa.getName()) + " : " + notificationMessage);
-    paa.changeChanceDecrementOrIncrementOnSuccessOrFailure(m_bridge, success, true);
+    paa.changeChanceDecrementOrIncrementOnSuccessOrFailure(bridge, success, true);
     sendNotification(notificationMessage);
     return success;
   }
@@ -422,7 +422,7 @@ public class PoliticsDelegate extends BaseTripleADelegate implements IPoliticsDe
    * try again for a number of attempts.
    */
   private void resetAttempts() {
-    for (final PoliticalActionAttachment paa : PoliticalActionAttachment.getPoliticalActionAttachments(m_player)) {
+    for (final PoliticalActionAttachment paa : PoliticalActionAttachment.getPoliticalActionAttachments(player)) {
       paa.resetAttempts(getBridge());
     }
   }
