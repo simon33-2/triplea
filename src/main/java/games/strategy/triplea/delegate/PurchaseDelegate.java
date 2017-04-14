@@ -52,7 +52,7 @@ import games.strategy.util.Match;
  */
 @MapSupport
 public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDelegate {
-  private boolean m_needToInitialize = true;
+  private boolean needToInitialize = true;
   public static final String NOT_ENOUGH_RESOURCES = "Not enough resources";
 
   /**
@@ -62,7 +62,7 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
   public void start() {
     super.start();
     final GameData data = getData();
-    if (m_needToInitialize) {
+    if (needToInitialize) {
       if (games.strategy.triplea.Properties.getTriggers(data)) {
         // First set up a match for what we want to have fire as a default in this delegate. List out as a composite
         // match OR.
@@ -73,38 +73,38 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
                 TriggerAttachment.prodFrontierEditMatch(), TriggerAttachment.purchaseMatch()));
         // get all possible triggers based on this match.
         final HashSet<TriggerAttachment> toFirePossible = TriggerAttachment.collectForAllTriggersMatching(
-            new HashSet<>(Collections.singleton(m_player)), purchaseDelegateTriggerMatch, m_bridge);
+            new HashSet<>(Collections.singleton(player)), purchaseDelegateTriggerMatch, bridge);
         if (!toFirePossible.isEmpty()) {
           // get all conditions possibly needed by these triggers, and then test them.
           final HashMap<ICondition, Boolean> testedConditions =
-              TriggerAttachment.collectTestsForAllTriggers(toFirePossible, m_bridge);
+              TriggerAttachment.collectTestsForAllTriggers(toFirePossible, bridge);
           // get all triggers that are satisfied based on the tested conditions.
           final Set<TriggerAttachment> toFireTestedAndSatisfied = new HashSet<>(
               Match.getMatches(toFirePossible, AbstractTriggerAttachment.isSatisfiedMatch(testedConditions)));
           // now list out individual types to fire, once for each of the matches above.
-          TriggerAttachment.triggerProductionChange(toFireTestedAndSatisfied, m_bridge, null, null, true, true, true,
+          TriggerAttachment.triggerProductionChange(toFireTestedAndSatisfied, bridge, null, null, true, true, true,
               true);
-          TriggerAttachment.triggerProductionFrontierEditChange(toFireTestedAndSatisfied, m_bridge, null, null, true,
+          TriggerAttachment.triggerProductionFrontierEditChange(toFireTestedAndSatisfied, bridge, null, null, true,
               true, true, true);
-          TriggerAttachment.triggerPurchase(toFireTestedAndSatisfied, m_bridge, null, null, true, true, true, true);
+          TriggerAttachment.triggerPurchase(toFireTestedAndSatisfied, bridge, null, null, true, true, true, true);
         }
       }
       giveBonusIncomeToAI();
-      m_needToInitialize = false;
+      needToInitialize = false;
     }
   }
 
   @Override
   public void end() {
     super.end();
-    m_needToInitialize = true;
+    needToInitialize = true;
   }
 
   @Override
   public Serializable saveState() {
     final PurchaseExtendedDelegateState state = new PurchaseExtendedDelegateState();
     state.superState = super.saveState();
-    state.m_needToInitialize = m_needToInitialize;
+    state.needToInitialize = needToInitialize;
     return state;
   }
 
@@ -112,33 +112,33 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
   public void loadState(final Serializable state) {
     final PurchaseExtendedDelegateState s = (PurchaseExtendedDelegateState) state;
     super.loadState(s.superState);
-    m_needToInitialize = s.m_needToInitialize;
+    needToInitialize = s.needToInitialize;
   }
 
   @Override
   public boolean delegateCurrentlyRequiresUserInput() {
-    if ((m_player.getProductionFrontier() == null || m_player.getProductionFrontier().getRules().isEmpty())
-        && (m_player.getRepairFrontier() == null || m_player.getRepairFrontier().getRules().isEmpty())) {
+    if ((player.getProductionFrontier() == null || player.getProductionFrontier().getRules().isEmpty())
+        && (player.getRepairFrontier() == null || player.getRepairFrontier().getRules().isEmpty())) {
       return false;
     }
     if (!canWePurchaseOrRepair()) {
       return false;
     }
     // if my capital is captured, I can't produce, but I may have PUs if I captured someone else's capital
-    return TerritoryAttachment.doWeHaveEnoughCapitalsToProduce(m_player, getData());
+    return TerritoryAttachment.doWeHaveEnoughCapitalsToProduce(player, getData());
   }
 
   protected boolean canWePurchaseOrRepair() {
-    if (m_player.getProductionFrontier() != null && m_player.getProductionFrontier().getRules() != null) {
-      for (final ProductionRule rule : m_player.getProductionFrontier().getRules()) {
-        if (m_player.getResources().has(rule.getCosts())) {
+    if (player.getProductionFrontier() != null && player.getProductionFrontier().getRules() != null) {
+      for (final ProductionRule rule : player.getProductionFrontier().getRules()) {
+        if (player.getResources().has(rule.getCosts())) {
           return true;
         }
       }
     }
-    if (m_player.getRepairFrontier() != null && m_player.getRepairFrontier().getRules() != null) {
-      for (final RepairRule rule : m_player.getRepairFrontier().getRules()) {
-        if (m_player.getResources().has(rule.getCosts())) {
+    if (player.getRepairFrontier() != null && player.getRepairFrontier().getRules() != null) {
+      for (final RepairRule rule : player.getRepairFrontier().getRules()) {
+        if (player.getResources().has(rule.getCosts())) {
           return true;
         }
       }
@@ -160,7 +160,7 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
   public String purchase(final IntegerMap<ProductionRule> productionRules) {
     final IntegerMap<Resource> costs = getCosts(productionRules);
     final IntegerMap<NamedAttachable> results = getResults(productionRules);
-    if (!(canAfford(costs, m_player))) {
+    if (!(canAfford(costs, player))) {
       return NOT_ENOUGH_RESOURCES;
     }
     // check to see if player has too many of any building with a building limit
@@ -176,10 +176,10 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
           return "May not build any of this unit right now: " + type.getName();
         } else if (maxBuilt > 0) {
           // count how many units are yet to be placed or are in the field
-          int currentlyBuilt = m_player.getUnits().countMatches(Matches.unitIsOfType(type));
+          int currentlyBuilt = player.getUnits().countMatches(Matches.unitIsOfType(type));
 
           final CompositeMatch<Unit> unitTypeOwnedBy =
-              new CompositeMatchAnd<>(Matches.unitIsOfType(type), Matches.unitIsOwnedBy(m_player));
+              new CompositeMatchAnd<>(Matches.unitIsOfType(type), Matches.unitIsOwnedBy(player));
           final Collection<Territory> allTerrs = getData().getMap().getTerritories();
           for (final Territory t : allTerrs) {
             currentlyBuilt += t.getUnits().countMatches(unitTypeOwnedBy);
@@ -207,7 +207,7 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
       if (next instanceof Resource) {
         final Resource resource = (Resource) next;
         final int quantity = results.getInt(resource);
-        final Change change = ChangeFactory.changeResourcesChange(m_player, resource, quantity);
+        final Change change = ChangeFactory.changeResourcesChange(player, resource, quantity);
         changes.add(change);
         for (int i = 0; i < quantity; i++) {
           totalResources.add(resource);
@@ -215,7 +215,7 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
       } else {
         final UnitType type = (UnitType) next;
         final int quantity = results.getInt(type);
-        final Collection<Unit> units = type.create(quantity, m_player);
+        final Collection<Unit> units = type.create(quantity, player);
         totalUnits.addAll(units);
         for (int i = 0; i < quantity; i++) {
           totalUnitTypes.add(type);
@@ -226,22 +226,22 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
     totalAll.addAll(totalResources);
     // add changes for added units
     if (!totalUnits.isEmpty()) {
-      final Change change = ChangeFactory.addUnits(m_player, totalUnits);
+      final Change change = ChangeFactory.addUnits(player, totalUnits);
       changes.add(change);
     }
     // add changes for spent resources
-    final String remaining = removeFromPlayer(m_player, costs, changes);
+    final String remaining = removeFromPlayer(player, costs, changes);
     // add history event
     String transcriptText;
     if (!totalUnits.isEmpty()) {
       transcriptText =
-          m_player.getName() + " buy " + MyFormatter.defaultNamedToTextList(totalAll, ", ", true) + "; " + remaining;
+          player.getName() + " buy " + MyFormatter.defaultNamedToTextList(totalAll, ", ", true) + "; " + remaining;
     } else {
-      transcriptText = m_player.getName() + " buy nothing; " + remaining;
+      transcriptText = player.getName() + " buy nothing; " + remaining;
     }
-    m_bridge.getHistoryWriter().startEvent(transcriptText, totalUnits);
+    bridge.getHistoryWriter().startEvent(transcriptText, totalUnits);
     // commit changes
-    m_bridge.addChange(changes);
+    bridge.addChange(changes);
     return null;
   }
 
@@ -250,8 +250,8 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
    */
   @Override
   public String purchaseRepair(final Map<Unit, IntegerMap<RepairRule>> repairRules) {
-    final IntegerMap<Resource> costs = getRepairCosts(repairRules, m_player);
-    if (!(canAfford(costs, m_player))) {
+    final IntegerMap<Resource> costs = getRepairCosts(repairRules, player);
+    if (!(canAfford(costs, player))) {
       return NOT_ENOUGH_RESOURCES;
     }
     if (!games.strategy.triplea.Properties.getDamageFromBombingDoneToUnitsInsteadOfTerritories(getData())) {
@@ -281,19 +281,19 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
       changes.add(ChangeFactory.bombingUnitDamage(damageMap));
     }
     // add changes for spent resources
-    final String remaining = removeFromPlayer(m_player, costs, changes);
+    final String remaining = removeFromPlayer(player, costs, changes);
     // add history event
     String transcriptText;
     if (!damageMap.isEmpty()) {
-      transcriptText = m_player.getName() + " repair damage of "
+      transcriptText = player.getName() + " repair damage of "
           + MyFormatter.integerUnitMapToString(repairMap, ", ", "x ", true) + "; " + remaining;
     } else {
-      transcriptText = m_player.getName() + " repair nothing; " + remaining;
+      transcriptText = player.getName() + " repair nothing; " + remaining;
     }
-    m_bridge.getHistoryWriter().startEvent(transcriptText, new HashSet<>(damageMap.keySet()));
+    bridge.getHistoryWriter().startEvent(transcriptText, new HashSet<>(damageMap.keySet()));
     // commit changes
     if (!changes.isEmpty()) {
-      m_bridge.addChange(changes);
+      bridge.addChange(changes);
     }
     return null;
   }
@@ -371,7 +371,7 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
   protected String removeFromPlayer(final PlayerID player, final IntegerMap<Resource> costs,
       final CompositeChange changes) {
     final StringBuffer returnString = new StringBuffer("Remaining resources: ");
-    final IntegerMap<Resource> left = m_player.getResources().getResourcesCopy();
+    final IntegerMap<Resource> left = player.getResources().getResourcesCopy();
     left.subtract(costs);
     for (final Entry<Resource, Integer> entry : left.entrySet()) {
       returnString.append(entry.getValue()).append(" ").append(entry.getKey().getName()).append("; ");
@@ -379,7 +379,7 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
     for (final Resource resource : costs.keySet()) {
       final float quantity = costs.getInt(resource);
       final int cost = (int) quantity;
-      final Change change = ChangeFactory.changeResourcesChange(m_player, resource, -cost);
+      final Change change = ChangeFactory.changeResourcesChange(player, resource, -cost);
       changes.add(change);
     }
     return returnString.toString();
@@ -387,10 +387,10 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
 
   private void giveBonusIncomeToAI() {
     // TODO and other resources?
-    if (!m_player.isAI()) {
+    if (!player.isAI()) {
       return;
     }
-    final int currentPUs = m_player.getResources().getQuantity(Constants.PUS);
+    final int currentPUs = player.getResources().getQuantity(Constants.PUS);
     if (currentPUs <= 0) {
       return;
     }
@@ -409,10 +409,10 @@ public class PurchaseDelegate extends BaseTripleADelegate implements IPurchaseDe
     if (toGive == 0) {
       return;
     }
-    m_bridge.getHistoryWriter()
+    bridge.getHistoryWriter()
         .startEvent("Giving AI player bonus income modifier of " + toGive + MyFormatter.pluralize(" PU", toGive));
-    m_bridge.addChange(
-        ChangeFactory.changeResourcesChange(m_player, getData().getResourceList().getResource(Constants.PUS), toGive));
+    bridge.addChange(
+        ChangeFactory.changeResourcesChange(player, getData().getResourceList().getResource(Constants.PUS), toGive));
   }
 }
 
@@ -421,5 +421,5 @@ class PurchaseExtendedDelegateState implements Serializable {
   private static final long serialVersionUID = 2326864364534284490L;
   Serializable superState;
   // add other variables here:
-  public boolean m_needToInitialize;
+  public boolean needToInitialize;
 }

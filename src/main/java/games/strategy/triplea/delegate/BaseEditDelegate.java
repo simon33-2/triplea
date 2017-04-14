@@ -51,7 +51,7 @@ public abstract class BaseEditDelegate extends BasePersistentDelegate {
 
   protected String checkPlayerID() {
     final IRemotePlayer remotePlayer = getRemotePlayer();
-    if (!m_bridge.getPlayerID().equals(remotePlayer.getPlayerID())) {
+    if (!bridge.getPlayerID().equals(remotePlayer.getPlayerID())) {
       return "Edit actions can only be performed during players turn";
     }
     return null;
@@ -70,11 +70,11 @@ public abstract class BaseEditDelegate extends BasePersistentDelegate {
 
   public String setEditMode(final boolean editMode) {
     final IRemotePlayer remotePlayer = getRemotePlayer();
-    if (!m_bridge.getPlayerID().equals(remotePlayer.getPlayerID())) {
+    if (!bridge.getPlayerID().equals(remotePlayer.getPlayerID())) {
       return "Edit Mode can only be toggled during players turn";
     }
     logEvent((editMode ? EDITMODE_ON : EDITMODE_OFF), null);
-    m_bridge.addChange(ChangeFactory.setProperty(Constants.EDIT_MODE, editMode, getData()));
+    bridge.addChange(ChangeFactory.setProperty(Constants.EDIT_MODE, editMode, getData()));
     return null;
   }
 
@@ -113,9 +113,9 @@ public abstract class BaseEditDelegate extends BasePersistentDelegate {
       game_data.releaseReadLock();
     }
     if (foundChild) {
-      m_bridge.getHistoryWriter().addChildToEvent(message, renderingObject);
+      bridge.getHistoryWriter().addChildToEvent(message, renderingObject);
     } else {
-      m_bridge.getHistoryWriter().startEvent(message, renderingObject);
+      bridge.getHistoryWriter().startEvent(message, renderingObject);
     }
   }
 }

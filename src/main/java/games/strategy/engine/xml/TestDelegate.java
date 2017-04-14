@@ -16,13 +16,13 @@ public final class TestDelegate extends AbstractDelegate {
     return false;
   }
 
-  public void initialize(final String name) {
-    m_name = name;
+  public void initialize(final String pName) {
+    name = pName;
   }
 
   @Override
-  public void initialize(final String name, final String displayName) {
-    m_name = name;
+  public void initialize(final String pName, final String displayName) {
+    name = pName;
   }
 
   public void startTransaction() {}
@@ -37,7 +37,7 @@ public final class TestDelegate extends AbstractDelegate {
 
   @Override
   public String getName() {
-    return m_name;
+    return name;
   }
 
   public void cancelTransaction() {}

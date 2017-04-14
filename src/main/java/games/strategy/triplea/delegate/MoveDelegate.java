@@ -44,9 +44,9 @@ public class MoveDelegate extends AbstractMoveDelegate {
 
   // needToInitialize means we only do certain things once, so that if a game is saved then
   // loaded, they aren't done again
-  private boolean m_needToInitialize = true;
-  private boolean m_needToDoRockets = true;
-  private IntegerMap<Territory> m_PUsLost = new IntegerMap<>();
+  private boolean needToInitialize = true;
+  private boolean needToDoRockets = true;
+  private IntegerMap<Territory> PUsLost = new IntegerMap<>();
 
   public MoveDelegate() {}
 
@@ -65,7 +65,7 @@ public class MoveDelegate extends AbstractMoveDelegate {
   public void start() {
     super.start();
     final GameData data = getData();
-    if (m_needToInitialize) {
+    if (needToInitialize) {
 
       // territory property changes triggered at beginning of combat move
       // TODO create new delegate called "start of turn" and move them there.
@@ -87,15 +87,15 @@ public class MoveDelegate extends AbstractMoveDelegate {
           moveCombatDelegateBeforeBonusTriggerMatch, moveCombatDelegateAfterBonusTriggerMatch);
       if (GameStepPropertiesHelper.isCombatMove(data) && games.strategy.triplea.Properties.getTriggers(data)) {
         final HashSet<TriggerAttachment> toFirePossible = TriggerAttachment.collectForAllTriggersMatching(
-            new HashSet<>(Collections.singleton(m_player)), moveCombatDelegateAllTriggerMatch, m_bridge);
+            new HashSet<>(Collections.singleton(player)), moveCombatDelegateAllTriggerMatch, bridge);
         if (!toFirePossible.isEmpty()) {
 
           // collect conditions and test them for ALL triggers, both those that we will fire before and those we will
           // fire after.
-          testedConditions = TriggerAttachment.collectTestsForAllTriggers(toFirePossible, m_bridge);
+          testedConditions = TriggerAttachment.collectTestsForAllTriggers(toFirePossible, bridge);
           final HashSet<TriggerAttachment> toFireBeforeBonus =
-              TriggerAttachment.collectForAllTriggersMatching(new HashSet<>(Collections.singleton(m_player)),
-                  moveCombatDelegateBeforeBonusTriggerMatch, m_bridge);
+              TriggerAttachment.collectForAllTriggersMatching(new HashSet<>(Collections.singleton(player)),
+                  moveCombatDelegateBeforeBonusTriggerMatch, bridge);
           if (!toFireBeforeBonus.isEmpty()) {
 
             // get all triggers that are satisfied based on the tested conditions.
@@ -103,19 +103,19 @@ public class MoveDelegate extends AbstractMoveDelegate {
                 Match.getMatches(toFireBeforeBonus, AbstractTriggerAttachment.isSatisfiedMatch(testedConditions)));
 
             // now list out individual types to fire, once for each of the matches above.
-            TriggerAttachment.triggerNotifications(toFireTestedAndSatisfied, m_bridge, null, null, true, true, true,
+            TriggerAttachment.triggerNotifications(toFireTestedAndSatisfied, bridge, null, null, true, true, true,
                 true);
-            TriggerAttachment.triggerPlayerPropertyChange(toFireTestedAndSatisfied, m_bridge, null, null, true, true,
+            TriggerAttachment.triggerPlayerPropertyChange(toFireTestedAndSatisfied, bridge, null, null, true, true,
                 true, true);
-            TriggerAttachment.triggerRelationshipTypePropertyChange(toFireTestedAndSatisfied, m_bridge, null, null,
+            TriggerAttachment.triggerRelationshipTypePropertyChange(toFireTestedAndSatisfied, bridge, null, null,
                 true, true, true, true);
-            TriggerAttachment.triggerTerritoryPropertyChange(toFireTestedAndSatisfied, m_bridge, null, null, true,
+            TriggerAttachment.triggerTerritoryPropertyChange(toFireTestedAndSatisfied, bridge, null, null, true,
                 true, true, true);
-            TriggerAttachment.triggerTerritoryEffectPropertyChange(toFireTestedAndSatisfied, m_bridge, null, null,
+            TriggerAttachment.triggerTerritoryEffectPropertyChange(toFireTestedAndSatisfied, bridge, null, null,
                 true, true, true, true);
-            TriggerAttachment.triggerChangeOwnership(toFireTestedAndSatisfied, m_bridge, null, null, true, true, true,
+            TriggerAttachment.triggerChangeOwnership(toFireTestedAndSatisfied, bridge, null, null, true, true, true,
                 true);
-            TriggerAttachment.triggerUnitRemoval(toFireTestedAndSatisfied, m_bridge, null, null, true, true, true,
+            TriggerAttachment.triggerUnitRemoval(toFireTestedAndSatisfied, bridge, null, null, true, true, true,
                 true);
           }
         }
@@ -124,7 +124,7 @@ public class MoveDelegate extends AbstractMoveDelegate {
       // repair 2-hit units at beginning of turn (some maps have combat move before purchase, so i think it is better to
       // do this at beginning of combat move)
       if (GameStepPropertiesHelper.isRepairUnits(data)) {
-        MoveDelegate.repairMultipleHitPointUnits(m_bridge, m_player);
+        MoveDelegate.repairMultipleHitPointUnits(bridge, player);
       }
 
       // reset any bonus of units, and give movement to units which begin the turn in the same territory as units with
@@ -134,12 +134,12 @@ public class MoveDelegate extends AbstractMoveDelegate {
       }
 
       // take away all movement from allied fighters sitting on damaged carriers
-      removeMovementFromAirOnDamagedAlliedCarriers(m_bridge, m_player);
+      removeMovementFromAirOnDamagedAlliedCarriers(bridge, player);
 
       // placing triggered units at beginning of combat move, but after bonuses and repairing, etc, have been done.
       if (GameStepPropertiesHelper.isCombatMove(data) && games.strategy.triplea.Properties.getTriggers(data)) {
         final HashSet<TriggerAttachment> toFireAfterBonus = TriggerAttachment.collectForAllTriggersMatching(
-            new HashSet<>(Collections.singleton(m_player)), moveCombatDelegateAfterBonusTriggerMatch, m_bridge);
+            new HashSet<>(Collections.singleton(player)), moveCombatDelegateAfterBonusTriggerMatch, bridge);
         if (!toFireAfterBonus.isEmpty()) {
 
           // get all triggers that are satisfied based on the tested conditions.
@@ -147,14 +147,14 @@ public class MoveDelegate extends AbstractMoveDelegate {
               Match.getMatches(toFireAfterBonus, AbstractTriggerAttachment.isSatisfiedMatch(testedConditions)));
 
           // now list out individual types to fire, once for each of the matches above.
-          TriggerAttachment.triggerUnitPlacement(toFireTestedAndSatisfied, m_bridge, null, null, true, true, true,
+          TriggerAttachment.triggerUnitPlacement(toFireTestedAndSatisfied, bridge, null, null, true, true, true,
               true);
         }
       }
       if (GameStepPropertiesHelper.isResetUnitStateAtStart(data)) {
         resetUnitStateAndDelegateState();
       }
-      m_needToInitialize = false;
+      needToInitialize = false;
     }
   }
 
@@ -162,19 +162,19 @@ public class MoveDelegate extends AbstractMoveDelegate {
     boolean addedHistoryEvent = false;
     final Change changeReset = resetBonusMovement();
     if (!changeReset.isEmpty()) {
-      m_bridge.getHistoryWriter().startEvent("Resetting and Giving Bonus Movement to Units");
-      m_bridge.addChange(changeReset);
+      bridge.getHistoryWriter().startEvent("Resetting and Giving Bonus Movement to Units");
+      bridge.addChange(changeReset);
       addedHistoryEvent = true;
     }
     Change changeBonus = null;
     if (games.strategy.triplea.Properties.getUnitsMayGiveBonusMovement(getData())) {
-      changeBonus = giveBonusMovement(m_bridge, m_player);
+      changeBonus = giveBonusMovement(bridge, player);
     }
     if (changeBonus != null && !changeBonus.isEmpty()) {
       if (!addedHistoryEvent) {
-        m_bridge.getHistoryWriter().startEvent("Resetting and Giving Bonus Movement to Units");
+        bridge.getHistoryWriter().startEvent("Resetting and Giving Bonus Movement to Units");
       }
-      m_bridge.addChange(changeBonus);
+      bridge.addChange(changeBonus);
     }
   }
 
@@ -191,13 +191,13 @@ public class MoveDelegate extends AbstractMoveDelegate {
 
     // WW2V2/WW2V3, fires at end of combat move - now moved to the start of the BattleDelegate
     // WW2V1, fires at end of non combat move
-    if (GameStepPropertiesHelper.isFireRockets(data,true)) {
-      if (m_needToDoRockets && TechTracker.hasRocket(m_bridge.getPlayerID())) {
+    if (needToDoRockets && GameStepPropertiesHelper.isFireRockets(data,this)) {
+      if (TechTracker.hasRocket(bridge.getPlayerID())) {
         final RocketsFireHelper helper = new RocketsFireHelper();
-        helper.findRocketTargets(m_bridge, m_bridge.getPlayerID());
-        helper.fireRockets(m_bridge, m_bridge.getPlayerID());
-        m_needToDoRockets = false;
+        helper.findRocketTargets(bridge);
+        helper.fireRockets(bridge);
       }
+      needToDoRockets = false;
     }
 
     // do at the end of the round, if we do it at the start of non combat, then we may do it in the middle of the round,
@@ -205,17 +205,17 @@ public class MoveDelegate extends AbstractMoveDelegate {
     if (GameStepPropertiesHelper.isResetUnitStateAtEnd(data)) {
       resetUnitStateAndDelegateState();
     }
-    m_needToInitialize = true;
-    m_needToDoRockets = true;
+    needToInitialize = true;
+    needToDoRockets = true;
   }
 
   @Override
   public Serializable saveState() {
     final MoveExtendedDelegateState state = new MoveExtendedDelegateState();
     state.superState = super.saveState();
-    state.m_needToInitialize = m_needToInitialize;
-    state.m_needToDoRockets = m_needToDoRockets;
-    state.m_PUsLost = m_PUsLost;
+    state.needToInitialize = needToInitialize;
+    state.needToDoRockets = needToDoRockets;
+    state.PUsLost = PUsLost;
     return state;
   }
 
@@ -223,15 +223,15 @@ public class MoveDelegate extends AbstractMoveDelegate {
   public void loadState(final Serializable state) {
     final MoveExtendedDelegateState s = (MoveExtendedDelegateState) state;
     super.loadState(s.superState);
-    m_needToInitialize = s.m_needToInitialize;
-    m_needToDoRockets = s.m_needToDoRockets;
-    m_PUsLost = s.m_PUsLost;
+    needToInitialize = s.needToInitialize;
+    needToDoRockets = s.needToDoRockets;
+    PUsLost = s.PUsLost;
   }
 
   @Override
   public boolean delegateCurrentlyRequiresUserInput() {
     final CompositeMatchAnd<Unit> moveableUnitOwnedByMe = new CompositeMatchAnd<>();
-    moveableUnitOwnedByMe.add(Matches.unitIsOwnedBy(m_player));
+    moveableUnitOwnedByMe.add(Matches.unitIsOwnedBy(player));
 
     // right now, land units on transports have movement taken away when they their transport moves
     moveableUnitOwnedByMe.add(new CompositeMatchOr<>(Matches.unitHasMovementLeft,
@@ -263,13 +263,13 @@ public class MoveDelegate extends AbstractMoveDelegate {
   private void resetUnitStateAndDelegateState() {
     // while not a 'unit state', this is fine here for now. since we only have one instance of this delegate, as long as
     // it gets cleared once per player's turn block, we are fine.
-    m_PUsLost.clear();
+    PUsLost.clear();
     final Change change = getResetUnitStateChange(getData());
     if (!change.isEmpty()) {
       // if no non-combat occurred, we may have cleanup left from combat
       // that we need to spawn an event for
-      m_bridge.getHistoryWriter().startEvent(CLEANING_UP_DURING_MOVEMENT_PHASE);
-      m_bridge.addChange(change);
+      bridge.getHistoryWriter().startEvent(CLEANING_UP_DURING_MOVEMENT_PHASE);
+      bridge.addChange(change);
     }
   }
 
@@ -505,7 +505,7 @@ public class MoveDelegate extends AbstractMoveDelegate {
     // the reason we use this, is if we are in edit mode, we may have a different unit owner than the current player
     final PlayerID player = getUnitsOwner(units);
     final MoveValidationResult result = MoveValidator.validateMove(units, route, player, transportsThatCanBeLoaded,
-        newDependents, GameStepPropertiesHelper.isNonCombatMove(data, false), m_movesToUndo, data);
+        newDependents, GameStepPropertiesHelper.isNonCombatMove(data, false), movesToUndo, data);
     final StringBuilder errorMsg = new StringBuilder(100);
     final int numProblems = result.getTotalWarningCount() - (result.hasError() ? 0 : 1);
     final String numErrorsMsg =
@@ -538,7 +538,7 @@ public class MoveDelegate extends AbstractMoveDelegate {
 
     // allow user to cancel move if aa guns will fire
     final AAInMoveUtil aaInMoveUtil = new AAInMoveUtil();
-    aaInMoveUtil.initialize(m_bridge);
+    aaInMoveUtil.initialize(bridge);
     final Collection<Territory> aaFiringTerritores = aaInMoveUtil.getTerritoriesWhereAAWillFire(route, units);
     if (!aaFiringTerritores.isEmpty()) {
       if (!getRemotePlayer().confirmMoveInFaceOfAA(aaFiringTerritores)) {
@@ -550,15 +550,15 @@ public class MoveDelegate extends AbstractMoveDelegate {
     final UndoableMove currentMove = new UndoableMove(units, route);
     final String transcriptText = MyFormatter.unitsToTextNoOwner(units) + " moved from " + route.getStart().getName()
         + " to " + route.getEnd().getName();
-    m_bridge.getHistoryWriter().startEvent(transcriptText, currentMove.getDescriptionObject());
+    bridge.getHistoryWriter().startEvent(transcriptText, currentMove.getDescriptionObject());
     if (isKamikaze) {
-      m_bridge.getHistoryWriter().addChildToEvent("This was a kamikaze move, for at least some of the units",
+      bridge.getHistoryWriter().addChildToEvent("This was a kamikaze move, for at least some of the units",
           kamikazeUnits);
     }
-    m_tempMovePerformer = new MovePerformer();
-    m_tempMovePerformer.initialize(this);
-    m_tempMovePerformer.moveUnits(units, route, player, transportsThatCanBeLoaded, newDependents, currentMove);
-    m_tempMovePerformer = null;
+    tempMovePerformer = new MovePerformer();
+    tempMovePerformer.initialize(this);
+    tempMovePerformer.moveUnits(units, route, player, transportsThatCanBeLoaded, newDependents, currentMove);
+    tempMovePerformer = null;
     return null;
   }
 
@@ -574,20 +574,20 @@ public class MoveDelegate extends AbstractMoveDelegate {
     final boolean lhtrCarrierProd = AirThatCantLandUtil.isLHTRCarrierProduction(data)
         || AirThatCantLandUtil.isLandExistingFightersOnNewCarriers(data);
     boolean hasProducedCarriers = false;
-    for (final PlayerID p : GameStepPropertiesHelper.getCombinedTurns(data, m_player)) {
+    for (final PlayerID p : GameStepPropertiesHelper.getCombinedTurns(data, player)) {
       if (p.getUnits().someMatch(Matches.UnitIsCarrier)) {
         hasProducedCarriers = true;
         break;
       }
     }
-    final AirThatCantLandUtil util = new AirThatCantLandUtil(m_bridge);
-    util.removeAirThatCantLand(m_player, lhtrCarrierProd && hasProducedCarriers);
+    final AirThatCantLandUtil util = new AirThatCantLandUtil(bridge);
+    util.removeAirThatCantLand(player, lhtrCarrierProd && hasProducedCarriers);
 
     // if edit mode has been on, we need to clean up after all players
     for (final PlayerID player : data.getPlayerList()) {
 
       // Check if player still has units to place
-      if (!player.equals(m_player)) {
+      if (!player.equals(player)) {
         util.removeAirThatCantLand(player,
             ((player.getUnits().someMatch(Matches.UnitIsCarrier) || hasProducedCarriers) && lhtrCarrierProd));
       }
@@ -599,7 +599,7 @@ public class MoveDelegate extends AbstractMoveDelegate {
    */
   @Override
   public int PUsAlreadyLost(final Territory t) {
-    return m_PUsLost.getInt(t);
+    return PUsLost.getInt(t);
   }
 
   /**
@@ -607,7 +607,7 @@ public class MoveDelegate extends AbstractMoveDelegate {
    */
   @Override
   public void PUsLost(final Territory t, final int amt) {
-    m_PUsLost.add(t, amt);
+    PUsLost.add(t, amt);
   }
 }
 
@@ -616,8 +616,7 @@ class MoveExtendedDelegateState implements Serializable {
   private static final long serialVersionUID = 5352248885420819215L;
   Serializable superState;
   // add other variables here:
-  public boolean m_firstRun = true;
-  public boolean m_needToInitialize;
-  public boolean m_needToDoRockets;
-  public IntegerMap<Territory> m_PUsLost;
+  public boolean needToInitialize;
+  public boolean needToDoRockets;
+  public IntegerMap<Territory> PUsLost;
 }

@@ -31,14 +31,14 @@ public class NoPUPurchaseDelegate extends PurchaseDelegate {
   public void start() {
     super.start();
     isPacific = isPacificTheater();
-    final PlayerID player = m_bridge.getPlayerID();
+    final PlayerID player = bridge.getPlayerID();
     final Collection<Territory> territories = getData().getMap().getTerritoriesOwnedBy(player);
     final Collection<Unit> units = getProductionUnits(territories, player);
     final Change productionChange = ChangeFactory.addUnits(player, units);
     final String transcriptText = player.getName() + " builds " + units.size() + " units.";
-    m_bridge.getHistoryWriter().startEvent(transcriptText);
+    bridge.getHistoryWriter().startEvent(transcriptText);
     if (productionChange != null) {
-      m_bridge.addChange(productionChange);
+      bridge.addChange(productionChange);
     }
   }
 

@@ -39,8 +39,8 @@ import games.strategy.util.Match;
  */
 @MapSupport
 public class EndRoundDelegate extends BaseTripleADelegate {
-  private boolean m_gameOver = false;
-  private Collection<PlayerID> m_winners = new ArrayList<>();
+  private boolean gameOver = false;
+  private Collection<PlayerID> winners = new ArrayList<>();
 
   /** Creates a new instance of EndRoundDelegate. */
   public EndRoundDelegate() {}
@@ -51,7 +51,7 @@ public class EndRoundDelegate extends BaseTripleADelegate {
   @Override
   public void start() {
     super.start();
-    if (m_gameOver) {
+    if (gameOver) {
       return;
     }
     String victoryMessage = null;
@@ -61,25 +61,24 @@ public class EndRoundDelegate extends BaseTripleADelegate {
       final PlayerAttachment pa = PlayerAttachment.get(japanese);
       if (pa != null && pa.getVps() >= 22) {
         victoryMessage = "Axis achieve VP victory";
-        m_bridge.getHistoryWriter().startEvent(victoryMessage);
-        final Collection<PlayerID> winners = data.getAllianceTracker()
-            .getPlayersInAlliance(data.getAllianceTracker().getAlliancesPlayerIsIn(japanese).iterator().next());
-        signalGameOver(victoryMessage, winners, m_bridge);
+        bridge.getHistoryWriter().startEvent(victoryMessage);
+        signalGameOver(victoryMessage, data.getAllianceTracker()
+          .getPlayersInAlliance(data.getAllianceTracker().getAlliancesPlayerIsIn(japanese).iterator().next()), bridge);
       }
     }
     // Check for Winning conditions
     if (isTotalVictory()) // Check for Win by Victory Cities
     {
       victoryMessage = " achieve TOTAL VICTORY with ";
-      checkVictoryCities(m_bridge, victoryMessage, " Total Victory VCs");
+      checkVictoryCities(bridge, victoryMessage, " Total Victory VCs");
     }
     if (isHonorableSurrender()) {
       victoryMessage = " achieve an HONORABLE VICTORY with ";
-      checkVictoryCities(m_bridge, victoryMessage, " Honorable Victory VCs");
+      checkVictoryCities(bridge, victoryMessage, " Honorable Victory VCs");
     }
     if (isProjectionOfPower()) {
       victoryMessage = " achieve victory through a PROJECTION OF POWER with ";
-      checkVictoryCities(m_bridge, victoryMessage, " Projection of Power VCs");
+      checkVictoryCities(bridge, victoryMessage, " Projection of Power VCs");
     }
     if (isEconomicVictory()) // Check for regular economic victory
     {
@@ -96,10 +95,10 @@ public class EndRoundDelegate extends BaseTripleADelegate {
           teamProd += getProduction(player);
           if (teamProd >= victoryAmount) {
             victoryMessage = allianceName + " achieve economic victory";
-            m_bridge.getHistoryWriter().startEvent(victoryMessage);
+            bridge.getHistoryWriter().startEvent(victoryMessage);
             final Collection<PlayerID> winners = data.getAllianceTracker().getPlayersInAlliance(allianceName);
             // Added this to end the game on victory conditions
-            signalGameOver(victoryMessage, winners, m_bridge);
+            signalGameOver(victoryMessage, winners, bridge);
           }
         }
       }
@@ -115,19 +114,19 @@ public class EndRoundDelegate extends BaseTripleADelegate {
                   TriggerAttachment.activateTriggerMatch(), TriggerAttachment.victoryMatch()));
       // get all possible triggers based on this match.
       final HashSet<TriggerAttachment> toFirePossible = TriggerAttachment.collectForAllTriggersMatching(
-          new HashSet<>(data.getPlayerList().getPlayers()), endRoundDelegateTriggerMatch, m_bridge);
+          new HashSet<>(data.getPlayerList().getPlayers()), endRoundDelegateTriggerMatch, bridge);
       if (!toFirePossible.isEmpty()) {
         // get all conditions possibly needed by these triggers, and then test them.
         final HashMap<ICondition, Boolean> testedConditions =
-            TriggerAttachment.collectTestsForAllTriggers(toFirePossible, m_bridge);
+            TriggerAttachment.collectTestsForAllTriggers(toFirePossible, bridge);
         // get all triggers that are satisfied based on the tested conditions.
         final Set<TriggerAttachment> toFireTestedAndSatisfied = new HashSet<>(
             Match.getMatches(toFirePossible, AbstractTriggerAttachment.isSatisfiedMatch(testedConditions)));
         // now list out individual types to fire, once for each of the matches above.
-        TriggerAttachment.triggerActivateTriggerOther(testedConditions, toFireTestedAndSatisfied, m_bridge, null, null,
+        TriggerAttachment.triggerActivateTriggerOther(testedConditions, toFireTestedAndSatisfied, bridge, null, null,
             true, true, true, true);
         // will call
-        TriggerAttachment.triggerVictory(toFireTestedAndSatisfied, m_bridge, null, null, true, true, true, true);
+        TriggerAttachment.triggerVictory(toFireTestedAndSatisfied, bridge, null, null, true, true, true, true);
         // signalGameOver itself
       }
     }
@@ -168,14 +167,14 @@ public class EndRoundDelegate extends BaseTripleADelegate {
     }
     victoryMessage = " achieve a military victory";
     if (germany && japan && count >= 2) {
-      m_bridge.getHistoryWriter().startEvent("Axis" + victoryMessage);
+      bridge.getHistoryWriter().startEvent("Axis" + victoryMessage);
       final Collection<PlayerID> winners = data.getAllianceTracker().getPlayersInAlliance("Axis");
-      signalGameOver("Axis" + victoryMessage, winners, m_bridge);
+      signalGameOver("Axis" + victoryMessage, winners, bridge);
     }
     if (russia && !germany && britain && !japan && america) {
-      m_bridge.getHistoryWriter().startEvent("Allies" + victoryMessage);
+      bridge.getHistoryWriter().startEvent("Allies" + victoryMessage);
       final Collection<PlayerID> winners = data.getAllianceTracker().getPlayersInAlliance("Allies");
-      signalGameOver("Allies" + victoryMessage, winners, m_bridge);
+      signalGameOver("Allies" + victoryMessage, winners, bridge);
     }
   }
 
@@ -186,11 +185,11 @@ public class EndRoundDelegate extends BaseTripleADelegate {
     if (games.strategy.triplea.Properties.getTriggers(data)) {
       final CompositeChange change = new CompositeChange();
       for (final PlayerID player : data.getPlayerList().getPlayers()) {
-        change.add(AbstractTriggerAttachment.triggerSetUsedForThisRound(player, m_bridge));
+        change.add(AbstractTriggerAttachment.triggerSetUsedForThisRound(player, bridge));
       }
       if (!change.isEmpty()) {
-        m_bridge.getHistoryWriter().startEvent("Setting uses for triggers used this round.");
-        m_bridge.addChange(change);
+        bridge.getHistoryWriter().startEvent("Setting uses for triggers used this round.");
+        bridge.addChange(change);
       }
     }
   }
@@ -199,8 +198,8 @@ public class EndRoundDelegate extends BaseTripleADelegate {
   public Serializable saveState() {
     final EndRoundExtendedDelegateState state = new EndRoundExtendedDelegateState();
     state.superState = super.saveState();
-    state.m_gameOver = m_gameOver;
-    state.m_winners = m_winners;
+    state.gameOver = gameOver;
+    state.winners = winners;
     return state;
   }
 
@@ -208,8 +207,8 @@ public class EndRoundDelegate extends BaseTripleADelegate {
   public void loadState(final Serializable state) {
     final EndRoundExtendedDelegateState s = (EndRoundExtendedDelegateState) state;
     super.loadState(s.superState);
-    m_gameOver = s.m_gameOver;
-    m_winners = s.m_winners;
+    gameOver = s.gameOver;
+    winners = s.winners;
   }
 
   @Override
@@ -267,15 +266,15 @@ public class EndRoundDelegate extends BaseTripleADelegate {
    * @param status
    *        the "game over" text to be displayed to each user.
    */
-  public void signalGameOver(final String status, final Collection<PlayerID> winners, final IDelegateBridge aBridge) {
+  public void signalGameOver(final String status, final Collection<PlayerID> pWinners, final IDelegateBridge aBridge) {
     // TO NOT USE m_bridge, because it might be null here! use aBridge instead.
     // If the game is over, we need to be able to alert all UIs to that fact.
     // The display object can send a message to all UIs.
-    if (!m_gameOver) {
-      m_gameOver = true;
-      m_winners = winners;
+    if (!gameOver) {
+      gameOver = true;
+      winners = pWinners;
       aBridge.getSoundChannelBroadcaster().playSoundForAll(SoundPath.CLIP_GAME_WON,
-          ((m_winners != null && !m_winners.isEmpty()) ? m_winners.iterator().next()
+          ((winners != null && !winners.isEmpty()) ? winners.iterator().next()
               : PlayerID.NULL_PLAYERID));
       // send a message to everyone's screen except the HOST (there is no 'current player' for the end round delegate)
       final String title = "Victory Achieved"
@@ -313,10 +312,10 @@ public class EndRoundDelegate extends BaseTripleADelegate {
    * if null, the game is not over yet.
    */
   public Collection<PlayerID> getWinners() {
-    if (!m_gameOver) {
+    if (!gameOver) {
       return null;
     }
-    return m_winners;
+    return winners;
   }
 
   private boolean isWW2V2() {
@@ -374,6 +373,6 @@ class EndRoundExtendedDelegateState implements Serializable {
   private static final long serialVersionUID = 8770361633528374127L;
   Serializable superState;
   // add other variables here:
-  public boolean m_gameOver = false;
-  public Collection<PlayerID> m_winners = new ArrayList<>();
+  public boolean gameOver = false;
+  public Collection<PlayerID> winners = new ArrayList<>();
 }

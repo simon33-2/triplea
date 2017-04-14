@@ -50,19 +50,20 @@ import games.strategy.util.Tuple;
 @MapSupport
 @AutoSave(beforeStepStart = true, afterStepEnd = true)
 public class BattleDelegate extends BaseTripleADelegate implements IBattleDelegate {
-  protected BattleTracker m_battleTracker = new BattleTracker();
+  protected BattleTracker battleTracker = new BattleTracker();
   // private OriginalOwnerTracker m_originalOwnerTracker = new OriginalOwnerTracker();
-  private boolean m_needToInitialize = true;
-  private boolean m_needToScramble = true;
-  private boolean m_needToKamikazeSuicideAttacks = true;
-  private boolean m_needToClearEmptyAirBattleAttacks = true;
-  private boolean m_needToAddBombardmentSources = true;
-  private boolean m_needToRecordBattleStatistics = true;
-  private boolean m_needToCheckDefendingPlanesCanLand = true;
-  private boolean m_needToCleanup = true;
-  private boolean m_needToDoRockets = true;
-  private RocketsFireHelper rocketHelper = null;
-  protected IBattle m_currentBattle = null;
+  private boolean needToInitialize = true;
+  private boolean needToScramble = true;
+  private boolean needToKamikazeSuicideAttacks = true;
+  private boolean needToClearEmptyAirBattleAttacks = true;
+  private boolean needToAddBombardmentSources = true;
+  private boolean needToRecordBattleStatistics = true;
+  private boolean needToCheckDefendingPlanesCanLand = true;
+  private boolean needToCleanup = true;
+  private boolean needToDoRockets = true;
+  private boolean needToFireRockets = false;
+  private RocketsFireHelper rocketHelper = new RocketsFireHelper();
+  protected IBattle currentBattle = null;
 
   /**
    * Called before the delegate will run, AND before "start" is called.
@@ -80,48 +81,44 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
     super.start();
     // we may start multiple times due to loading after saving
     // only initialize once
-    if (m_needToInitialize) {
-      doInitialize(m_battleTracker, m_bridge);
-      m_needToDoRockets = true;
-      m_needToInitialize = false;
+    if (needToInitialize) {
+      doInitialize(battleTracker, bridge);
+      needToInitialize = false;
     }
     // WW2V2/WW2V3, fires at end of combat move - now moved to the start of the BattleDelegate
     // WW2V1, fires at end of non combat move
-    if (GameStepPropertiesHelper.isFireRockets(getData(),false)) {
-      if (m_needToDoRockets && TechTracker.hasRocket(m_bridge.getPlayerID())) {
-        rocketHelper = new RocketsFireHelper();
-        rocketHelper.findRocketTargets(m_bridge, m_bridge.getPlayerID());
-        m_needToDoRockets = false;
+    if (needToDoRockets) {
+      if (GameStepPropertiesHelper.isFireRockets(getData(),this) && TechTracker.hasRocket(bridge.getPlayerID())) {
+        if (!games.strategy.triplea.Properties.getStrictRockets(getData())) {
+          rocketHelper.findRocketTargets(bridge);
+        }
+        needToFireRockets = true;
       }
+      needToDoRockets = false;
     }
 
     // do pre-combat stuff, like scrambling, after we have setup all battles, but before we have bombardment, etc.
     // the order of all of this stuff matters quite a bit.
-    if (m_needToScramble) {
+    if (needToScramble) {
       doScrambling();
-      m_needToScramble = false;
+      needToScramble = false;
     }
-    if (m_needToKamikazeSuicideAttacks) {
+    if (needToKamikazeSuicideAttacks) {
       doKamikazeSuicideAttacks();
-      m_needToKamikazeSuicideAttacks = false;
+      needToKamikazeSuicideAttacks = false;
     }
-    if (m_needToClearEmptyAirBattleAttacks) {
-      clearEmptyAirBattleAttacks(m_battleTracker, m_bridge);
-      m_needToClearEmptyAirBattleAttacks = false;
+    if (needToClearEmptyAirBattleAttacks) {
+      clearEmptyAirBattleAttacks(battleTracker, bridge);
+      needToClearEmptyAirBattleAttacks = false;
     }
-    if (m_needToAddBombardmentSources) {
+    if (needToAddBombardmentSources) {
       addBombardmentSources();
-      m_needToAddBombardmentSources = false;
+      needToAddBombardmentSources = false;
     }
     fightCurrentBattle();
-    if (rocketHelper != null && !games.strategy.triplea.Properties.getRollRocketsAfterSBR(getData())) {
-      rocketHelper.fireRockets(m_bridge, m_bridge.getPlayerID());
-      rocketHelper = null;
-    }
-    m_battleTracker.fightAirRaidsAndStrategicBombing(m_bridge);
-    if (rocketHelper != null) {
-      rocketHelper.fireRockets(m_bridge, m_bridge.getPlayerID());
-      rocketHelper = null;
+    battleTracker.fightAirRaidsAndStrategicBombing(bridge);
+    if (needToFireRockets) {
+      rocketHelper.fireRockets(bridge);
     }
   }
 
@@ -130,30 +127,30 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
    */
   @Override
   public void end() {
-    if (m_needToRecordBattleStatistics) {
-      getBattleTracker().sendBattleRecordsToGameData(m_bridge);
-      m_needToRecordBattleStatistics = false;
+    if (needToRecordBattleStatistics) {
+      getBattleTracker().sendBattleRecordsToGameData(bridge);
+      needToRecordBattleStatistics = false;
     }
-    if (m_needToCleanup) {
+    if (needToCleanup) {
       getBattleTracker().clearBattleRecords();
       scramblingCleanup();
       airBattleCleanup();
-      m_needToCleanup = false;
+      needToCleanup = false;
     }
-    if (m_needToCheckDefendingPlanesCanLand) {
+    if (needToCheckDefendingPlanesCanLand) {
       checkDefendingPlanesCanLand();
-      m_needToCheckDefendingPlanesCanLand = false;
+      needToCheckDefendingPlanesCanLand = false;
     }
     super.end();
-    m_needToInitialize = true;
-    m_needToScramble = true;
-    m_needToKamikazeSuicideAttacks = true;
-    m_needToClearEmptyAirBattleAttacks = true;
-    m_needToAddBombardmentSources = true;
-    m_needToRecordBattleStatistics = true;
-    m_needToCleanup = true;
-    m_needToCheckDefendingPlanesCanLand = true;
-    m_needToDoRockets = true;
+    needToInitialize = true;
+    needToScramble = true;
+    needToKamikazeSuicideAttacks = true;
+    needToClearEmptyAirBattleAttacks = true;
+    needToAddBombardmentSources = true;
+    needToRecordBattleStatistics = true;
+    needToCleanup = true;
+    needToCheckDefendingPlanesCanLand = true;
+    needToDoRockets = true;
   }
 
   @Override
@@ -161,18 +158,19 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
     final BattleExtendedDelegateState state = new BattleExtendedDelegateState();
     state.superState = super.saveState();
     // add other variables to state here:
-    state.m_battleTracker = m_battleTracker;
-    // state.m_originalOwnerTracker = m_originalOwnerTracker;
-    state.m_needToInitialize = m_needToInitialize;
-    state.m_needToScramble = m_needToScramble;
-    state.m_needToKamikazeSuicideAttacks = m_needToKamikazeSuicideAttacks;
-    state.m_needToClearEmptyAirBattleAttacks = m_needToClearEmptyAirBattleAttacks;
-    state.m_needToAddBombardmentSources = m_needToAddBombardmentSources;
-    state.m_needToRecordBattleStatistics = m_needToRecordBattleStatistics;
-    state.m_needToCheckDefendingPlanesCanLand = m_needToCheckDefendingPlanesCanLand;
-    state.m_needToCleanup = m_needToCleanup;
-    state.m_currentBattle = m_currentBattle;
-    state.m_needToDoRockets = m_needToDoRockets;
+    state.battleTracker = battleTracker;
+    // state.originalOwnerTracker = originalOwnerTracker;
+    state.needToInitialize = needToInitialize;
+    state.needToScramble = needToScramble;
+    state.needToKamikazeSuicideAttacks = needToKamikazeSuicideAttacks;
+    state.needToClearEmptyAirBattleAttacks = needToClearEmptyAirBattleAttacks;
+    state.needToAddBombardmentSources = needToAddBombardmentSources;
+    state.needToRecordBattleStatistics = needToRecordBattleStatistics;
+    state.needToCheckDefendingPlanesCanLand = needToCheckDefendingPlanesCanLand;
+    state.needToCleanup = needToCleanup;
+    state.currentBattle = currentBattle;
+    state.needToDoRockets = needToDoRockets;
+    state.needToFireRockets = needToFireRockets;
     return state;
   }
 
@@ -180,17 +178,18 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
   public void loadState(final Serializable state) {
     final BattleExtendedDelegateState s = (BattleExtendedDelegateState) state;
     super.loadState(s.superState);
-    m_battleTracker = s.m_battleTracker;
-    m_needToInitialize = s.m_needToInitialize;
-    m_needToScramble = s.m_needToScramble;
-    m_needToKamikazeSuicideAttacks = s.m_needToKamikazeSuicideAttacks;
-    m_needToClearEmptyAirBattleAttacks = s.m_needToClearEmptyAirBattleAttacks;
-    m_needToAddBombardmentSources = s.m_needToAddBombardmentSources;
-    m_needToRecordBattleStatistics = s.m_needToRecordBattleStatistics;
-    m_needToCheckDefendingPlanesCanLand = s.m_needToCheckDefendingPlanesCanLand;
-    m_needToCleanup = s.m_needToCleanup;
-    m_needToDoRockets = s.m_needToDoRockets;
-    m_currentBattle = s.m_currentBattle;
+    battleTracker = s.battleTracker;
+    needToInitialize = s.needToInitialize;
+    needToScramble = s.needToScramble;
+    needToKamikazeSuicideAttacks = s.needToKamikazeSuicideAttacks;
+    needToClearEmptyAirBattleAttacks = s.needToClearEmptyAirBattleAttacks;
+    needToAddBombardmentSources = s.needToAddBombardmentSources;
+    needToRecordBattleStatistics = s.needToRecordBattleStatistics;
+    needToCheckDefendingPlanesCanLand = s.needToCheckDefendingPlanesCanLand;
+    needToCleanup = s.needToCleanup;
+    needToDoRockets = s.needToDoRockets;
+    needToFireRockets = s.needToFireRockets;
+    currentBattle = s.currentBattle;
   }
 
   @Override
@@ -220,37 +219,37 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
 
   @Override
   public String fightCurrentBattle() {
-    if (m_currentBattle == null) {
+    if (currentBattle == null) {
       return null;
     }
     // fight the battle
-    m_currentBattle.fight(m_bridge);
-    m_currentBattle = null;
+    currentBattle.fight(bridge);
+    currentBattle = null;
     // and were done
     return null;
   }
 
   @Override
   public String fightBattle(final Territory territory, final boolean bombing, final BattleType type) {
-    final IBattle battle = m_battleTracker.getPendingBattle(territory, bombing, type);
-    if (m_currentBattle != null && m_currentBattle != battle) {
-      return "Must finish " + getFightingWord(m_currentBattle) + " in " + m_currentBattle.getTerritory() + " first";
+    final IBattle battle = battleTracker.getPendingBattle(territory, bombing, type);
+    if (currentBattle != null && currentBattle != battle) {
+      return "Must finish " + getFightingWord(currentBattle) + " in " + currentBattle.getTerritory() + " first";
     }
     // does the battle exist
     if (battle == null) {
       return "No pending battle in" + territory.getName();
     }
     // are there battles that must occur first
-    final Collection<IBattle> allMustPrecede = m_battleTracker.getDependentOn(battle);
+    final Collection<IBattle> allMustPrecede = battleTracker.getDependentOn(battle);
     if (!allMustPrecede.isEmpty()) {
       final IBattle firstPrecede = allMustPrecede.iterator().next();
       final String name = firstPrecede.getTerritory().getName();
       return "Must complete " + getFightingWord(firstPrecede) + " in " + name + " first";
     }
-    m_currentBattle = battle;
+    currentBattle = battle;
     // fight the battle
-    battle.fight(m_bridge);
-    m_currentBattle = null;
+    battle.fight(bridge);
+    currentBattle = null;
     // and were done
     return null;
   }
@@ -261,7 +260,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
 
   @Override
   public BattleListing getBattles() {
-    return m_battleTracker.getPendingBattleSites();
+    return battleTracker.getPendingBattleSites();
   }
 
   private boolean isShoreBombardPerGroundUnitRestricted(final GameData data) {
@@ -269,7 +268,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
   }
 
   public BattleTracker getBattleTracker() {
-    return m_battleTracker;
+    return battleTracker;
   }
 
   public IDelegateBridge getBattleBridge() {
@@ -280,7 +279,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
    * Add bombardment units to battles.
    */
   private void addBombardmentSources() {
-    final PlayerID attacker = m_bridge.getPlayerID();
+    final PlayerID attacker = bridge.getPlayerID();
     final ITripleAPlayer remotePlayer = getRemotePlayer();
     final Match<Unit> ownedAndCanBombard =
         new CompositeMatchAnd<>(Matches.unitCanBombard(attacker), Matches.unitIsOwnedBy(attacker));
@@ -289,7 +288,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
     final boolean shoreBombardPerGroundUnitRestricted = isShoreBombardPerGroundUnitRestricted(getData());
     while (territories.hasNext()) {
       final Territory t = territories.next();
-      if (!m_battleTracker.hasPendingBattle(t, false)) {
+      if (!battleTracker.hasPendingBattle(t, false)) {
         Collection<IBattle> battles = adjBombardment.get(t);
         battles = Match.getMatches(battles, Matches.BattleIsAmphibious);
         if (!battles.isEmpty()) {
@@ -338,10 +337,10 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
   private Map<Territory, Collection<IBattle>> getPossibleBombardingTerritories() {
     final Map<Territory, Collection<IBattle>> possibleBombardingTerritories =
         new HashMap<>();
-    final Iterator<Territory> battleTerritories = m_battleTracker.getPendingBattleSites(false).iterator();
+    final Iterator<Territory> battleTerritories = battleTracker.getPendingBattleSites(false).iterator();
     while (battleTerritories.hasNext()) {
       final Territory t = battleTerritories.next();
-      final IBattle battle = m_battleTracker.getPendingBattle(t, false, BattleType.NORMAL);
+      final IBattle battle = battleTracker.getPendingBattle(t, false, BattleType.NORMAL);
       // we only care about battles where we must fight
       // this check is really to avoid implementing getAttackingFrom() in other battle subclasses
       if (!(battle instanceof MustFightBattle)) {
@@ -353,7 +352,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
       while (bombardingTerritories.hasNext()) {
         final Territory neighbor = bombardingTerritories.next();
         // we do not allow bombarding from certain sea zones (like if there was a kamikaze suicide attack there, etc)
-        if (m_battleTracker.noBombardAllowedFromHere(neighbor)) {
+        if (battleTracker.noBombardAllowedFromHere(neighbor)) {
           continue;
         }
         // If all units from a territory are air- no bombard
@@ -667,22 +666,22 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
         maxScrambleDistance = ua.getMaxScrambleDistance();
       }
     }
-    final Match<Unit> airbasesCanScramble = new CompositeMatchAnd<>(Matches.unitIsEnemyOf(data, m_player),
+    final Match<Unit> airbasesCanScramble = new CompositeMatchAnd<>(Matches.unitIsEnemyOf(data, player),
         Matches.UnitIsAirBase, Matches.UnitIsNotDisabled, Matches.unitIsBeingTransported().invert());
     final CompositeMatchAnd<Territory> canScramble = new CompositeMatchAnd<>(
-        new CompositeMatchOr<Territory>(Matches.TerritoryIsWater, Matches.isTerritoryEnemy(m_player, data)),
+        new CompositeMatchOr<Territory>(Matches.TerritoryIsWater, Matches.isTerritoryEnemy(player, data)),
         Matches.territoryHasUnitsThatMatch(new CompositeMatchAnd<>(Matches.UnitCanScramble,
-            Matches.unitIsEnemyOf(data, m_player), Matches.UnitIsNotDisabled)),
+            Matches.unitIsEnemyOf(data, player), Matches.UnitIsNotDisabled)),
         Matches.territoryHasUnitsThatMatch(airbasesCanScramble));
     if (fromIslandOnly) {
       canScramble.add(Matches.TerritoryIsIsland);
     }
     final HashMap<Territory, HashSet<Territory>> scrambleTerrs = new HashMap<>();
     final Set<Territory> territoriesWithBattles =
-        m_battleTracker.getPendingBattleSites().getNormalBattlesIncludingAirBattles();
+        battleTracker.getPendingBattleSites().getNormalBattlesIncludingAirBattles();
     if (toSBR) {
       territoriesWithBattles
-          .addAll(m_battleTracker.getPendingBattleSites().getStrategicBombingRaidsIncludingAirBattles());
+          .addAll(battleTracker.getPendingBattleSites().getStrategicBombingRaidsIncludingAirBattles());
     }
     final Set<Territory> territoriesWithBattlesWater = new HashSet<>();
     final Set<Territory> territoriesWithBattlesLand = new HashSet<>();
@@ -703,7 +702,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
           scrambleTerrs.put(battleTerr, canScrambleFrom);
         }
       }
-      final IBattle battle = m_battleTracker.getPendingBattle(battleTerr, false, BattleType.NORMAL);
+      final IBattle battle = battleTracker.getPendingBattle(battleTerr, false, BattleType.NORMAL);
       // do not forget we may already have the territory in the list, so we need to add to the collection, not overwrite
       // it.
       if (battle != null && battle.isAmphibious() && battle instanceof DependentBattle) {
@@ -737,19 +736,19 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
           new HashMap<>();
       // find who we should ask
       PlayerID defender = null;
-      if (m_battleTracker.hasPendingBattle(to, false)) {
-        defender = AbstractBattle.findDefender(to, m_player, data);
+      if (battleTracker.hasPendingBattle(to, false)) {
+        defender = AbstractBattle.findDefender(to, player, data);
       }
       for (final Territory from : scrambleTerrs.get(to)) {
         if (defender == null) {
-          defender = AbstractBattle.findDefender(from, m_player, data);
+          defender = AbstractBattle.findDefender(from, player, data);
         }
         // find how many is the max this territory can scramble
         final Collection<Unit> airbases = from.getUnits().getMatches(airbasesCanScramble);
         final int maxCanScramble = getMaxScrambleCount(airbases);
         final Route toBattleRoute = data.getMap().getRoute_IgnoreEnd(from, to, Matches.TerritoryIsNotImpassable);
         final Collection<Unit> canScrambleAir = from.getUnits()
-            .getMatches(new CompositeMatchAnd<>(Matches.unitIsEnemyOf(data, m_player), Matches.UnitCanScramble,
+            .getMatches(new CompositeMatchAnd<>(Matches.unitIsEnemyOf(data, player), Matches.UnitCanScramble,
                 Matches.UnitIsNotDisabled, Matches.UnitWasScrambled.invert(),
                 Matches.unitCanScrambleOnRouteDistance(toBattleRoute)));
         if (maxCanScramble > 0 && !canScrambleAir.isEmpty()) {
@@ -843,22 +842,22 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
           }
           // should we mark combat, or call setupUnitsInSameTerritoryBattles again?
           change.add(ChangeFactory.moveUnits(t, to, scrambling));
-          m_bridge.getHistoryWriter().startEvent(defender.getName() + " scrambles " + scrambling.size()
+          bridge.getHistoryWriter().startEvent(defender.getName() + " scrambles " + scrambling.size()
               + " units out of " + t.getName() + " to defend against the attack in " + to.getName(), scrambling);
           scrambledHere = true;
         }
         if (!change.isEmpty()) {
-          m_bridge.addChange(change);
+          bridge.addChange(change);
         }
       }
       if (!scrambledHere) {
         continue;
       }
       // make sure the units join the battle, or create a new battle.
-      final IBattle bombing = m_battleTracker.getPendingBattle(to, true, null);
-      IBattle battle = m_battleTracker.getPendingBattle(to, false, BattleType.NORMAL);
+      final IBattle bombing = battleTracker.getPendingBattle(to, true, null);
+      IBattle battle = battleTracker.getPendingBattle(to, false, BattleType.NORMAL);
       if (battle == null) {
-        final List<Unit> attackingUnits = to.getUnits().getMatches(Matches.unitIsOwnedBy(m_player));
+        final List<Unit> attackingUnits = to.getUnits().getMatches(Matches.unitIsOwnedBy(player));
         if (bombing != null) {
           attackingUnits.removeAll(bombing.getAttackingUnits());
         }
@@ -868,12 +867,12 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
         if (attackingUnits.isEmpty()) {
           continue;
         }
-        m_bridge.getHistoryWriter()
+        bridge.getHistoryWriter()
             .startEvent(defender.getName() + " scrambles to create a battle in territory " + to.getName());
         // TODO: the attacking sea units do not remember where they came from, so they cannot retreat anywhere. Need to
         // fix.
-        m_battleTracker.addBattle(new RouteScripted(to), attackingUnits, m_player, m_bridge, null, null);
-        battle = m_battleTracker.getPendingBattle(to, false, BattleType.NORMAL);
+        battleTracker.addBattle(new RouteScripted(to), attackingUnits, player, bridge, null, null);
+        battle = battleTracker.getPendingBattle(to, false, BattleType.NORMAL);
         if (battle instanceof MustFightBattle) {
           // this is an ugly mess of hacks, but will have to stay here till all transport related code is gutted and
           // refactored.
@@ -884,7 +883,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
             final CompositeChange change1 = new CompositeChange();
             mfb.reLoadTransports(attackingUnits, change1);
             if (!change1.isEmpty()) {
-              m_bridge.addChange(change1);
+              bridge.addChange(change1);
             }
             // after that is applied, we have to make a map of all dependencies
             final Map<Territory, Map<Unit, Collection<Unit>>> dependencies =
@@ -904,7 +903,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
               // All other maps, must hold only the transported units that in their territory
               final Collection<Unit> allNeighborUnits =
                   new ArrayList<>(Match.getMatches(attackingUnits, Matches.UnitIsTransport));
-              allNeighborUnits.addAll(t.getUnits().getMatches(Matches.unitIsLandAndOwnedBy(m_player)));
+              allNeighborUnits.addAll(t.getUnits().getMatches(Matches.unitIsLandAndOwnedBy(player)));
               final Map<Unit, Collection<Unit>> dependenciesForNeighbors =
                   TransportTracker.transporting(Match.getMatches(allNeighborUnits, Matches.UnitIsTransport),
                       Match.getMatches(allNeighborUnits, Matches.UnitIsTransport.invert()));
@@ -913,7 +912,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
             mfb.addDependentUnits(dependencies.get(to));
             for (final Territory territoryNeighborToNewBattle : neighborsLand) {
               final IBattle battleInTerritoryNeighborToNewBattle =
-                  m_battleTracker.getPendingBattle(territoryNeighborToNewBattle, false, BattleType.NORMAL);
+                  battleTracker.getPendingBattle(territoryNeighborToNewBattle, false, BattleType.NORMAL);
               if (battleInTerritoryNeighborToNewBattle != null
                   && battleInTerritoryNeighborToNewBattle instanceof MustFightBattle) {
                 final MustFightBattle mfbattleInTerritoryNeighborToNewBattle =
@@ -945,19 +944,19 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
           }
         }
       } else if (battle instanceof MustFightBattle) {
-        ((MustFightBattle) battle).resetDefendingUnits(m_player, data);
+        ((MustFightBattle) battle).resetDefendingUnits(player, data);
       }
       // now make sure any amphibious battles that are dependent on this 'new' sea battle have their dependencies set.
       if (to.isWater()) {
         for (final Territory t : data.getMap().getNeighbors(to, Matches.TerritoryIsLand)) {
-          final IBattle battleAmphib = m_battleTracker.getPendingBattle(t, false, BattleType.NORMAL);
+          final IBattle battleAmphib = battleTracker.getPendingBattle(t, false, BattleType.NORMAL);
           if (battleAmphib != null) {
-            if (!m_battleTracker.getDependentOn(battle).contains(battleAmphib)) {
-              m_battleTracker.addDependency(battleAmphib, battle);
+            if (!battleTracker.getDependentOn(battle).contains(battleAmphib)) {
+              battleTracker.addDependency(battleAmphib, battle);
             }
             if (battleAmphib instanceof MustFightBattle) {
               // and we want to reset the defenders if the scrambling air has left that battle
-              ((MustFightBattle) battleAmphib).resetDefendingUnits(m_player, data);
+              ((MustFightBattle) battleAmphib).resetDefendingUnits(player, data);
             }
           }
         }
@@ -998,7 +997,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
         String historyText = "";
         if (!mustReturnToBase || !Matches.isTerritoryAllied(u.getOwner(), data).match(originatedFrom)) {
           final Collection<Territory> possible = whereCanAirLand(Collections.singletonList(u), t, u.getOwner(), data,
-              m_battleTracker, carrierCostOfCurrentTerr, 1, !mustReturnToBase);
+              battleTracker, carrierCostOfCurrentTerr, 1, !mustReturnToBase);
           if (possible.size() > 1) {
             landingTerr = getRemotePlayer(u.getOwner()).selectTerritoryForAirToLand(possible, t,
                 "Select territory for air units to land. (Current territory is " + t.getName() + "): "
@@ -1024,8 +1023,8 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
         change.add(ChangeFactory.unitPropertyChange(u, null, TripleAUnit.ORIGINATED_FROM));
         change.add(ChangeFactory.unitPropertyChange(u, false, TripleAUnit.WAS_SCRAMBLED));
         if (!change.isEmpty()) {
-          m_bridge.getHistoryWriter().startEvent(historyText, u);
-          m_bridge.addChange(change);
+          bridge.getHistoryWriter().startEvent(historyText, u);
+          bridge.addChange(change);
         }
       }
     }
@@ -1067,14 +1066,14 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
       }
     }
     if (!change.isEmpty()) {
-      m_bridge.getHistoryWriter().startEvent("Cleaning up after air battles");
-      m_bridge.addChange(change);
+      bridge.getHistoryWriter().startEvent("Cleaning up after air battles");
+      bridge.addChange(change);
     }
   }
 
   private void checkDefendingPlanesCanLand() {
     final GameData data = getData();
-    final Map<Territory, Collection<Unit>> defendingAirThatCanNotLand = m_battleTracker.getDefendingAirThatCanNotLand();
+    final Map<Territory, Collection<Unit>> defendingAirThatCanNotLand = battleTracker.getDefendingAirThatCanNotLand();
     final boolean isWW2v2orIsSurvivingAirMoveToLand = games.strategy.triplea.Properties.getWW2V2(data)
         || games.strategy.triplea.Properties.getSurvivingAirMoveToLand(data);
     final CompositeMatch<Unit> alliedDefendingAir =
@@ -1089,7 +1088,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
       if (defendingAir.isEmpty()) {
         continue;
       }
-      final PlayerID defender = AbstractBattle.findDefender(battleSite, m_player, data);
+      final PlayerID defender = AbstractBattle.findDefender(battleSite, player, data);
       // Get all land territories where we can land
       final Set<Territory> neighbors = data.getMap().getNeighbors(battleSite);
       final CompositeMatch<Territory> alliedLandTerritories =
@@ -1132,10 +1131,10 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
             territory = canLandHere.iterator().next();
           }
           if (territory.isWater()) {
-            landPlanesOnCarriers(m_bridge, alliedDefendingAir, defendingAir, alliedCarrier, alliedPlane,
+            landPlanesOnCarriers(bridge, alliedDefendingAir, defendingAir, alliedCarrier, alliedPlane,
                 territory, battleSite);
           } else {
-            moveAirAndLand(m_bridge, defendingAir, defendingAir, territory, battleSite);
+            moveAirAndLand(bridge, defendingAir, defendingAir, territory, battleSite);
             continue;
           }
           // remove the territory from those available
@@ -1145,10 +1144,10 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
         if (canLandHere.size() > 0 && defendingAir.size() > 0) {
           territory = canLandHere.iterator().next();
           if (territory.isWater()) {
-            landPlanesOnCarriers(m_bridge, alliedDefendingAir, defendingAir, alliedCarrier, alliedPlane,
+            landPlanesOnCarriers(bridge, alliedDefendingAir, defendingAir, alliedCarrier, alliedPlane,
                 territory, battleSite);
           } else {
-            moveAirAndLand(m_bridge, defendingAir, defendingAir, territory, battleSite);
+            moveAirAndLand(bridge, defendingAir, defendingAir, territory, battleSite);
             continue;
           }
         }
@@ -1158,17 +1157,17 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
         for (final Territory currentTerritory : canLandHere) {
           // only one neighbor, its an island.
           if (data.getMap().getNeighbors(currentTerritory).size() == 1) {
-            moveAirAndLand(m_bridge, defendingAir, defendingAir, currentTerritory, battleSite);
+            moveAirAndLand(bridge, defendingAir, defendingAir, currentTerritory, battleSite);
           }
         }
       }
       if (defendingAir.size() > 0) {
         // no where to go, they must die
-        m_bridge.getHistoryWriter().addChildToEvent(
+        bridge.getHistoryWriter().addChildToEvent(
             MyFormatter.unitsToText(defendingAir) + " could not land and were killed",
             new ArrayList<>(defendingAir));
         final Change change = ChangeFactory.removeUnits(battleSite, defendingAir);
-        m_bridge.addChange(change);
+        bridge.addChange(change);
       }
     }
   }
@@ -1225,15 +1224,15 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
     // the current player is not the one who is doing these attacks, it is the all the enemies of this player who will
     // do attacks
     final Collection<PlayerID> enemies =
-        Match.getMatches(data.getPlayerList().getPlayers(), Matches.isAtWar(m_player, data));
+        Match.getMatches(data.getPlayerList().getPlayers(), Matches.isAtWar(player, data));
     if (enemies.isEmpty()) {
       return;
     }
-    final Match<Unit> canBeAttackedDefault = new CompositeMatchAnd<>(Matches.unitIsOwnedBy(m_player),
+    final Match<Unit> canBeAttackedDefault = new CompositeMatchAnd<>(Matches.unitIsOwnedBy(player),
         Matches.UnitIsSea, Matches.UnitIsNotTransportButCouldBeCombatTransport, Matches.UnitIsNotSub);
     final boolean onlyWhereThereAreBattlesOrAmphibious =
         games.strategy.triplea.Properties.getKamikazeSuicideAttacksOnlyWhereBattlesAre(data);
-    final Collection<Territory> pendingBattles = m_battleTracker.getPendingBattleSites(false);
+    final Collection<Territory> pendingBattles = battleTracker.getPendingBattleSites(false);
     // create a list of all kamikaze zones, listed by enemy
     final HashMap<PlayerID, Collection<Territory>> kamikazeZonesByEnemy =
         new HashMap<>();
@@ -1258,7 +1257,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
         }
       }
       if (enemies.contains(owner)) {
-        if (Match.noneMatch(t.getUnits().getUnits(), Matches.unitIsOwnedBy(m_player))) {
+        if (Match.noneMatch(t.getUnits().getUnits(), Matches.unitIsOwnedBy(player))) {
           continue;
         }
         if (onlyWhereThereAreBattlesOrAmphibious) {
@@ -1270,10 +1269,10 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
             boolean amphib = false;
             final Collection<Territory> landNeighbors = data.getMap().getNeighbors(t, Matches.TerritoryIsLand);
             for (final Territory neighbor : landNeighbors) {
-              final IBattle battle = m_battleTracker.getPendingBattle(neighbor, false, BattleType.NORMAL);
+              final IBattle battle = battleTracker.getPendingBattle(neighbor, false, BattleType.NORMAL);
               if (battle == null) {
                 final Map<Territory, Collection<Unit>> whereFrom =
-                    m_battleTracker.getFinishedBattlesUnitAttackFromMap().get(neighbor);
+                    battleTracker.getFinishedBattlesUnitAttackFromMap().get(neighbor);
                 if (whereFrom != null && whereFrom.containsKey(t)) {
                   amphib = true;
                   break;
@@ -1314,7 +1313,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
       final Set<UnitType> suicideAttackTargets = pa.getSuicideAttackTargets();
       if (suicideAttackTargets != null) {
         canBeAttacked =
-            new CompositeMatchAnd<>(Matches.unitIsOwnedBy(m_player), Matches.unitIsOfTypes(suicideAttackTargets));
+            new CompositeMatchAnd<>(Matches.unitIsOwnedBy(player), Matches.unitIsOfTypes(suicideAttackTargets));
       }
       // See if the player has any attack tokens
       final IntegerMap<Resource> resourcesAndAttackValues = pa.getSuicideAttackResources();
@@ -1405,7 +1404,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
         hits = power / diceSides;
         final int remainder = power % diceSides;
         if (remainder > 0) {
-          rolls = m_bridge.getRandom(diceSides, 1, firingEnemy, DiceType.COMBAT,
+          rolls = bridge.getRandom(diceSides, 1, firingEnemy, DiceType.COMBAT,
               "Rolling for remainder in Kamikaze Suicide Attack on unit: " + unitUnderFire.getType().getName());
           if (remainder > rolls[0]) {
             hits++;
@@ -1415,7 +1414,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
     } else {
       // avoid multiple calls of getRandom, so just do it once at the beginning
       final int numTokens = numberOfAttacks.totalValues();
-      rolls = m_bridge.getRandom(diceSides, numTokens, firingEnemy, DiceType.COMBAT,
+      rolls = bridge.getRandom(diceSides, numTokens, firingEnemy, DiceType.COMBAT,
           "Rolling for Kamikaze Suicide Attack on unit: " + unitUnderFire.getType().getName());
       final int[] powerOfTokens = new int[numTokens];
       int j = 0;
@@ -1439,7 +1438,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
     final String title =
         "Kamikaze Suicide Attack attacks " + MyFormatter.unitsToText(Collections.singleton(unitUnderFire));
     final String dice = " scoring " + hits + " hits.  Rolls: " + MyFormatter.asDice(rolls);
-    m_bridge.getHistoryWriter().startEvent(title + dice, unitUnderFire);
+    bridge.getHistoryWriter().startEvent(title + dice, unitUnderFire);
     if (hits > 0) {
       final UnitAttachment ua = UnitAttachment.get(unitUnderFire.getType());
       final int currentHits = unitUnderFire.getHits();
@@ -1450,18 +1449,18 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
         final IntegerMap<Unit> hitMap = new IntegerMap<>();
         hitMap.put(unitUnderFire, hits + unitUnderFire.getHits());
         change.add(ChangeFactory.unitsHit(hitMap));
-        m_bridge.getHistoryWriter().addChildToEvent(
+        bridge.getHistoryWriter().addChildToEvent(
             "Units damaged: " + MyFormatter.unitsToText(Collections.singleton(unitUnderFire)), unitUnderFire);
       }
     }
     if (!change.isEmpty()) {
-      m_bridge.addChange(change);
+      bridge.addChange(change);
     }
     // kamikaze suicide attacks, even if unsuccessful, deny the ability to bombard from this sea zone
-    m_battleTracker.addNoBombardAllowedFromHere(location);
+    battleTracker.addNoBombardAllowedFromHere(location);
     // TODO: display this as actual dice for both players
     final Collection<PlayerID> playersInvolved = new ArrayList<>();
-    playersInvolved.add(m_player);
+    playersInvolved.add(player);
     playersInvolved.add(firingEnemy);
     this.getDisplay().reportMessageToPlayers(playersInvolved, null, title + dice, title);
   }
@@ -1582,7 +1581,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
 
   @Override
   public Territory getCurrentBattleTerritory() {
-    final IBattle b = m_currentBattle;
+    final IBattle b = currentBattle;
     if (b != null) {
       return b.getTerritory();
     } else {
@@ -1592,7 +1591,7 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
 
   @Override
   public IBattle getCurrentBattle() {
-    return m_currentBattle;
+    return currentBattle;
   }
 }
 
@@ -1601,17 +1600,19 @@ class BattleExtendedDelegateState implements Serializable {
   private static final long serialVersionUID = 7899007486408723505L;
   Serializable superState;
   // add other variables here:
-  BattleTracker m_battleTracker = new BattleTracker();
+  BattleTracker battleTracker = new BattleTracker();
   // public OriginalOwnerTracker m_originalOwnerTracker = new OriginalOwnerTracker();
-  public boolean m_needToInitialize;
-  boolean m_needToScramble;
-  boolean m_needToKamikazeSuicideAttacks;
-  boolean m_needToClearEmptyAirBattleAttacks;
-  boolean m_needToAddBombardmentSources;
-  boolean m_needToRecordBattleStatistics;
-  boolean m_needToCheckDefendingPlanesCanLand;
-  boolean m_needToCleanup;
-  boolean m_needToDoRockets;
+  public boolean needToInitialize;
+  boolean needToScramble;
+  boolean needToKamikazeSuicideAttacks;
+  boolean needToClearEmptyAirBattleAttacks;
+  boolean needToAddBombardmentSources;
+  boolean needToRecordBattleStatistics;
+  boolean needToCheckDefendingPlanesCanLand;
+  boolean needToCleanup;
+  boolean needToDoRockets;
+  boolean needToTargetRockets;
+  boolean needToFireRockets;
   RocketsFireHelper rocketHelper;
-  IBattle m_currentBattle;
+  IBattle currentBattle;
 }

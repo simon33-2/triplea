@@ -30,15 +30,15 @@ import games.strategy.util.Match;
  * This delegate is only supposed to be run once, per game, at the start of the game.
  */
 public class InitializationDelegate extends BaseTripleADelegate {
-  private boolean m_needToInitialize = true;
+  private boolean needToInitialize = true;
 
   /** Creates a new instance of InitializationDelegate. */
   public InitializationDelegate() {}
 
   @Override
-  public void initialize(final String name, final String displayName) {
-    m_name = name;
-    m_displayName = displayName;
+  public void initialize(final String pName, final String pDisplayName) {
+    name = pName;
+    displayName = pDisplayName;
   }
 
   /**
@@ -47,9 +47,9 @@ public class InitializationDelegate extends BaseTripleADelegate {
   @Override
   public void start() {
     super.start();
-    if (m_needToInitialize) {
-      init(m_bridge);
-      m_needToInitialize = false;
+    if (needToInitialize) {
+      init(bridge);
+      needToInitialize = false;
     }
   }
 
@@ -63,7 +63,7 @@ public class InitializationDelegate extends BaseTripleADelegate {
     final InitializationExtendedDelegateState state = new InitializationExtendedDelegateState();
     state.superState = super.saveState();
     // add other variables to state here:
-    state.m_needToInitialize = this.m_needToInitialize;
+    state.needToInitialize = this.needToInitialize;
     return state;
   }
 
@@ -71,7 +71,7 @@ public class InitializationDelegate extends BaseTripleADelegate {
   public void loadState(final Serializable state) {
     final InitializationExtendedDelegateState s = (InitializationExtendedDelegateState) state;
     super.loadState(s.superState);
-    this.m_needToInitialize = s.m_needToInitialize;
+    this.needToInitialize = s.needToInitialize;
   }
 
   @Override
@@ -99,8 +99,8 @@ public class InitializationDelegate extends BaseTripleADelegate {
   private void resetUnitState(final IDelegateBridge aBridge) {
     final Change change = MoveDelegate.getResetUnitStateChange(getData());
     if (!change.isEmpty()) {
-      m_bridge.getHistoryWriter().startEvent("Cleaning up unit state.");
-      m_bridge.addChange(change);
+      bridge.getHistoryWriter().startEvent("Cleaning up unit state.");
+      bridge.addChange(change);
     }
   }
 
@@ -351,5 +351,5 @@ public class InitializationDelegate extends BaseTripleADelegate {
 class InitializationExtendedDelegateState implements Serializable {
   private static final long serialVersionUID = -9000446777655823735L;
   Serializable superState;
-  public boolean m_needToInitialize;
+  public boolean needToInitialize;
 }

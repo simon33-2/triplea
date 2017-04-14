@@ -16,10 +16,10 @@ import games.strategy.sound.ISound;
  * Code common to all delegates is implemented here.
  */
 public abstract class AbstractDelegate implements IDelegate {
-  protected String m_name;
-  protected String m_displayName;
-  protected PlayerID m_player;
-  protected IDelegateBridge m_bridge;
+  protected String name;
+  protected String displayName;
+  protected PlayerID player;
+  protected IDelegateBridge bridge;
 
   /**
    * Creates a new instance of the Delegate.
@@ -27,9 +27,9 @@ public abstract class AbstractDelegate implements IDelegate {
   public AbstractDelegate() {}
 
   @Override
-  public void initialize(final String name, final String displayName) {
-    m_name = name;
-    m_displayName = displayName;
+  public void initialize(final String pName, final String pDisplayName) {
+    name = pName;
+    displayName = pDisplayName;
   }
 
   /**
@@ -37,8 +37,8 @@ public abstract class AbstractDelegate implements IDelegate {
    */
   @Override
   public void setDelegateBridgeAndPlayer(final IDelegateBridge iDelegateBridge) {
-    m_bridge = iDelegateBridge;
-    m_player = iDelegateBridge.getPlayerID();
+    bridge = iDelegateBridge;
+    player = iDelegateBridge.getPlayerID();
   }
 
   /**
@@ -61,12 +61,12 @@ public abstract class AbstractDelegate implements IDelegate {
 
   @Override
   public String getName() {
-    return m_name;
+    return name;
   }
 
   @Override
   public String getDisplayName() {
-    return m_displayName;
+    return displayName;
   }
 
   /**
@@ -95,15 +95,15 @@ public abstract class AbstractDelegate implements IDelegate {
 
   @Override
   public IDelegateBridge getBridge() {
-    return m_bridge;
+    return bridge;
   }
 
   protected GameData getData() {
-    return m_bridge.getData();
+    return bridge.getData();
   }
 
   protected IDisplay getDisplay() {
-    return getDisplay(m_bridge);
+    return getDisplay(bridge);
   }
 
   protected static IDisplay getDisplay(final IDelegateBridge bridge) {
@@ -111,7 +111,7 @@ public abstract class AbstractDelegate implements IDelegate {
   }
 
   protected ISound getSoundChannel() {
-    return getSoundChannel(m_bridge);
+    return getSoundChannel(bridge);
   }
 
   protected static ISound getSoundChannel(final IDelegateBridge bridge) {
@@ -119,7 +119,7 @@ public abstract class AbstractDelegate implements IDelegate {
   }
 
   protected IRemotePlayer getRemotePlayer() {
-    return getRemotePlayer(m_bridge);
+    return getRemotePlayer(bridge);
   }
 
   protected static IRemotePlayer getRemotePlayer(final IDelegateBridge bridge) {
@@ -138,7 +138,7 @@ public abstract class AbstractDelegate implements IDelegate {
    * </p>
    */
   protected IRemotePlayer getRemotePlayer(final PlayerID player) {
-    return m_bridge.getRemotePlayer(player);
+    return bridge.getRemotePlayer(player);
   }
 }
 /*
