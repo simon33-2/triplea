@@ -27,18 +27,9 @@ public abstract class DependentBattle extends AbstractBattle {
     super(battleSite, attacker, battleTracker, isBombingRun, battleType, data);
   }
 
-  public Collection<Territory> getAttackingFrom() {
-    return m_attackingFrom;
-  }
+  abstract public Collection<Territory> getAttackingFrom();
 
-  public Map<Territory, Collection<Unit>> getAttackingFromMap() {
-    return m_attackingFromMap;
-  }
+  abstract public Map<Territory, Collection<Unit>> getAttackingFromMap();
 
-  /**
-   * @return territories where there are amphibious attacks.
-   */
-  public Collection<Territory> getAmphibiousAttackTerritories() {
-    return m_amphibiousAttackFrom;
-  }
+  abstract public Collection<Territory> getAmphibiousAttackTerritories();
 }

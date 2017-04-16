@@ -39,6 +39,24 @@ public class NonFightingBattle extends DependentBattle {
   }
 
   @Override
+  public Collection<Territory> getAttackingFrom() {
+    return m_attackingFrom;
+  }
+
+  @Override
+  public Map<Territory, Collection<Unit>> getAttackingFromMap() {
+    return m_attackingFromMap;
+  }
+
+  /**
+   * @return territories where there are amphibious attacks.
+   */
+  @Override
+  public Collection<Territory> getAmphibiousAttackTerritories() {
+    return m_amphibiousAttackFrom;
+  }
+  
+  @Override
   public Change addAttackChange(final Route route, final Collection<Unit> units,
       final HashMap<Unit, HashSet<Unit>> targets) {
     final Map<Unit, Collection<Unit>> addedTransporting = TransportTracker.transporting(units);
