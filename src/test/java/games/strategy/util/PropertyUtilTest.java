@@ -10,9 +10,13 @@ import games.strategy.triplea.attachments.RulesAttachment;
 /**
  * PropertyUtil test sets / gets variables via reflection.
  *
+ * <p>
  * The set in PropertyUtil done through a setter method, the get is done by reading the private variable value directly.
+ * </p>
  *
+ * <p>
  * To test we set up some sample test objects and do read/set property operations on them.
+ * </p>
  */
 public class PropertyUtilTest {
   @Test
@@ -70,7 +74,8 @@ public class PropertyUtilTest {
     final NoOpSetterClass testClass = new NoOpSetterClass();
     PropertyUtil.set(BAR, NEW_VALUE, testClass);
     assertThat(
-        "we are only really checking that the setter method was called, which did not do anything, thus we shoudl still have a default value.",
+        "we are only really checking that the setter method was called, which did not do anything, thus we should "
+            + "still have a default value.",
         testClass.bar, is("default"));
   }
 

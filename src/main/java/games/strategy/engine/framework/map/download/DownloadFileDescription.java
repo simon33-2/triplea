@@ -103,7 +103,9 @@ public class DownloadFileDescription {
     return downloadType == DownloadType.MAP_TOOL;
   }
 
-  /** @return Name of the zip file. */
+  /**
+   * @return Name of the zip file.
+   */
   public String getMapZipFileName() {
     if (url != null && url.contains("/")) {
       return url.substring(url.lastIndexOf('/') + 1, url.length());
@@ -123,8 +125,7 @@ public class DownloadFileDescription {
 
   /** File reference for where to install the file. */
   public File getInstallLocation() {
-    String masterSuffix = (getMapZipFileName().toLowerCase().endsWith("master.zip")) ?
-        "-master" : "";
+    String masterSuffix = (getMapZipFileName().toLowerCase().endsWith("master.zip")) ? "-master" : "";
     String normalizedMapName = getMapName().toLowerCase().replace(' ', '_') + masterSuffix + ".zip";
     return new File(ClientFileSystemHelper.getUserMapsFolder() + File.separator + normalizedMapName);
   }

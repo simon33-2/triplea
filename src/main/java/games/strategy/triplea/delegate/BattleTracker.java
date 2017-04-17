@@ -32,6 +32,8 @@ import games.strategy.net.GUID;
 import games.strategy.sound.SoundPath;
 import games.strategy.triplea.Constants;
 import games.strategy.triplea.TripleAUnit;
+import games.strategy.triplea.ai.proAI.ProData;
+import games.strategy.triplea.ai.proAI.util.ProBattleUtils;
 import games.strategy.triplea.attachments.PlayerAttachment;
 import games.strategy.triplea.attachments.TerritoryAttachment;
 import games.strategy.triplea.attachments.UnitAttachment;
@@ -1109,8 +1111,9 @@ public class BattleTracker implements java.io.Serializable {
   }
 
   @VisibleForTesting
-  void fightAirRaidsAndStrategicBombing(final IDelegateBridge delegateBridge, Supplier<Collection<Territory>> pendingBattleSiteSupplier,
-             BiFunction<Territory, BattleType, IBattle> pendingBattleFunction) {
+  void fightAirRaidsAndStrategicBombing(final IDelegateBridge delegateBridge,
+      Supplier<Collection<Territory>> pendingBattleSiteSupplier,
+      BiFunction<Territory, BattleType, IBattle> pendingBattleFunction) {
 
 
 
@@ -1134,6 +1137,48 @@ public class BattleTracker implements java.io.Serializable {
       }
     }
   }
+
+  /**
+   * 'Auto-fight' defenseless battles.
+   */
+  public void fightAutoKills(final IDelegateBridge bridge) {
+    // Kill undefended transports. Done first to remove potentially dependent sea battles
+    // Which could block amphibious assaults below
+    final GameData gameData = bridge.getData();
+    for (final Territory territory : getPendingBattleSites(false)) {
+      final IBattle battle = getPendingBattle(territory, false, BattleType.NORMAL);
+      final List<Unit> defenders = new ArrayList<>();
+      defenders.addAll(battle.getDefendingUnits());
+      final List<Unit> sortedUnitsList = new ArrayList<>(Match.getMatches(defenders,
+                 Matches.UnitCanBeInBattle(true, !territory.isWater(), gameData, 1, false, true, true)));
+      Collections.sort(sortedUnitsList, new UnitBattleComparator(false, ProData.unitValueMap,
+          TerritoryEffectHelper.getEffects(territory), gameData, false, false));
+      Collections.reverse(sortedUnitsList);
+      if (DiceRoll.getTotalPower(
+          DiceRoll.getUnitPowerAndRollsForNormalBattles(sortedUnitsList, defenders, false, false, gameData,
+            territory, TerritoryEffectHelper.getEffects(territory), false, null), gameData) == 0) {
+        battle.fight(bridge);
+      }
+    }
+    getPendingBattleSites(false).stream().map(territory -> getPendingBattle(territory, false, BattleType.NORMAL))
+         .forEach( battle -> {
+           if (battle instanceof NonFightingBattle && getDependentOn(battle).isEmpty()) {
+             battle.fight( bridge );
+           }
+         });
+  }
+
+  /**
+   * Fight battle if only one.
+   */
+  public void fightBattleIfOnlyOne(final IDelegateBridge bridge) {
+    final Collection<Territory> territories = getPendingBattleSites(false);
+    if (territories.size() == 1) {
+      final IBattle battle = getPendingBattle(territories.iterator().next(), false, BattleType.NORMAL);
+      battle.fight(bridge);
+    }
+  }
+
 
   @Override
   public String toString() {

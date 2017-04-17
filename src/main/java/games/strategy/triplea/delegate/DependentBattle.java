@@ -31,5 +31,8 @@ public abstract class DependentBattle extends AbstractBattle {
 
   abstract public Map<Territory, Collection<Unit>> getAttackingFromMap();
 
+  /**
+   * @return territories where there are amphibious attacks.
+   */
   abstract public Collection<Territory> getAmphibiousAttackTerritories();
 }

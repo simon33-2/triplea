@@ -41,9 +41,10 @@ import games.strategy.net.UniversalPlugAndPlayHelper;
 
 /**
  * Watches a game in progress, and updates the Lobby with the state of the game.
+ *
  * <p>
  * This class opens its own connection to the lobby, and its own messenger.
- * <p>
+ * </p>
  */
 public class InGameLobbyWatcher {
   public static final String LOBBY_WATCHER_NAME = "lobby_watcher";
@@ -69,9 +70,10 @@ public class InGameLobbyWatcher {
 
   /**
    * Reads SystemProperties to see if we should connect to a lobby server
+   *
    * <p>
    * After creation, those properties are cleared, since we should watch the first start game.
-   * <p>
+   * </p>
    *
    * @return null if no watcher should be created
    */
@@ -232,9 +234,11 @@ public class InGameLobbyWatcher {
                     + "You must have Universal Plug and Play (UPnP) enabled on your router.\r\n"
                     + "Only around half of all routers come with UPnP enabled by default.\r\n\r\n"
                     + "If this does not work, try turning on UPnP in your router, then try this all again.\r\n"
-                    + "(To change your router's settings, click 'How To Host...' in the help menu, or use google search.)\r\n\r\n"
+                    + "(To change your router's settings, click 'How To Host...' in the help menu, or use google "
+                    + "search.)\r\n\r\n"
                     + "If TripleA previously successfully set your port forwarding, but you still cannot host, \r\n"
-                    + "then the problem is most likely your firewall. Try creating an exception for TripleA in the firewall.\r\n"
+                    + "then the problem is most likely your firewall. Try creating an exception for TripleA in the "
+                    + "firewall.\r\n"
                     + "Or disable the firewall briefly just to test.\r\n"
                     + "The firewall exception must be updated every time a new version of TripleA comes out.\r\n";
             final int answer = JOptionPane.showConfirmDialog(parentComponent, question,

@@ -50,20 +50,25 @@ import games.strategy.util.Tuple;
 
 /**
  * Base class for AIs.
+ *
  * <p>
  * Control pausing with the AI pause menu option.
  * AIs should note that any data that is stored in the AI instance, will be lost when the game is restarted.
  * We cannot save data with an AI, since the player may choose to restart the game with a different AI,
  * or with a human player.
+ * </p>
+ *
  * <p>
  * If an AI finds itself starting in the middle of a move phase, or the middle of a purchase phase,
  * (as would happen if a player saved the game during the middle of an AI's move phase) it is acceptable
  * for the AI to play badly for a turn, but the AI should recover, and play correctly when the next phase
  * of the game starts.
+ * </p>
+ *
  * <p>
  * As a rule, nothing that changes GameData should be in here (it should be in a delegate, and done
  * through an IDelegate using a change).
- * <p>
+ * </p>
  */
 public abstract class AbstractAI extends AbstractBasePlayer implements ITripleAPlayer {
 
@@ -122,8 +127,8 @@ public abstract class AbstractAI extends AbstractBasePlayer implements ITripleAP
       final CasualtyList defaultCasualties, final GUID battleID, final Territory battlesite,
       final boolean allowMultipleHitsPerUnit) {
     if (defaultCasualties.size() != count) {
-      throw new IllegalStateException(
-          "Select Casualties showing different numbers for number of hits to take vs total size of default casualty selections");
+      throw new IllegalStateException("Select Casualties showing different numbers for number of hits to take vs total "
+          + "size of default casualty selections");
     }
     if (defaultCasualties.getKilled().size() <= 0) {
       return new CasualtyDetails(defaultCasualties, false);

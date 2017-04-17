@@ -40,6 +40,7 @@ import games.strategy.util.Tuple;
 
 /**
  * Logic for placing units.
+ *
  * <p>
  * Known limitations.
  * Doesn't take into account limits on number of factories that can be produced.
@@ -51,6 +52,7 @@ import games.strategy.util.Tuple;
  * capacity to produce in f.
  * A workaround was that if anyone ever accidently run into this situation
  * then they could undo the production, produce in f first, and then produce in e.
+ * </p>
  */
 public abstract class AbstractPlaceDelegate extends BaseTripleADelegate implements IAbstractPlaceDelegate {
   // maps Territory-> Collection of units
@@ -737,7 +739,8 @@ public abstract class AbstractPlaceDelegate extends BaseTripleADelegate implemen
     // if its an original factory then unlimited production
     Collections.sort(producers, getBestProducerComparator(to, units, player));
     if (!getCanAllUnitsWithRequiresUnitsBePlacedCorrectly(units, to)) {
-      return "Cannot place more units which require units, than production capacity of territories with the required units";
+      return "Cannot place more units which require units, than production capacity of territories with the required "
+          + "units";
     }
     final int maxUnitsToBePlaced = getMaxUnitsToBePlaced(units, to, player, true);
     if ((maxUnitsToBePlaced != -1) && (maxUnitsToBePlaced < units.size())) {
@@ -1086,8 +1089,7 @@ public abstract class AbstractPlaceDelegate extends BaseTripleADelegate implemen
     final RulesAttachment ra = (RulesAttachment) player.getAttachment(Constants.RULES_ATTACHMENT_NAME);
     final Collection<Unit> alreadProducedUnits = getAlreadyProduced(producer);
     final int unitCountAlreadyProduced = alreadProducedUnits.size();
-    if (originalFactory && playerIsOriginalOwner)
-    {
+    if (originalFactory && playerIsOriginalOwner) {
       if (ra != null && ra.getMaxPlacePerTerritory() != -1) {
         return Math.max(0, ra.getMaxPlacePerTerritory() - unitCountAlreadyProduced);
       }
@@ -1196,8 +1198,8 @@ public abstract class AbstractPlaceDelegate extends BaseTripleADelegate implemen
               }
             }
             if (productionThatCanBeTakenOverFromThisPlacement > maxProductionThatCanBeTakenOverFromThisPlacement) {
-              throw new IllegalStateException(
-                  "productionThatCanBeTakenOverFromThisPlacement should never be larger than maxProductionThatCanBeTakenOverFromThisPlacement");
+              throw new IllegalStateException("productionThatCanBeTakenOverFromThisPlacement should never be larger "
+                  + "than maxProductionThatCanBeTakenOverFromThisPlacement");
             }
             productionThatCanBeTakenOver += productionThatCanBeTakenOverFromThisPlacement;
           }

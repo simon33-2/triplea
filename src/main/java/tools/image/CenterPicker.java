@@ -59,8 +59,7 @@ public class CenterPicker extends JFrame {
    * Asks the user to select the map then runs the
    * the actual picker.
    *
-   * @param java
-   *        .lang.String[] args the command line arguments
+   * @param args The command line arguments.
    */
   public static void main(final String[] args) {
     handleCommandLineArgs(args);
@@ -78,12 +77,15 @@ public class CenterPicker extends JFrame {
       picker.setVisible(true);
       JOptionPane.showMessageDialog(picker,
           new JLabel("<html>" + "This is the CenterPicker, it will create a centers.txt file for you. "
-              + "<br>Please click on the center of every single territory and sea zone on your map, and give each a name. "
-              + "<br>The point you clicked on will tell TripleA where to put things like any flags, text, unit placements, etc, "
+              + "<br>Please click on the center of every single territory and sea zone on your map, and give each a "
+              + "name. "
+              + "<br>The point you clicked on will tell TripleA where to put things like any flags, text, unit "
+              + "placements, etc, "
               + "<br>so be sure to click in the exact middle, or slight up and left of the middle, of each territory "
               + "<br>(but still within the territory borders)."
               + "<br>Do not use special or illegal characters in territory names."
-              + "<br><br>You can also load an existing centers.txt file, then make modifications to it, then save it again."
+              + "<br><br>You can also load an existing centers.txt file, then make modifications to it, then save it "
+              + "again."
               + "<br><br>LEFT CLICK = create a new center point for a territory/zone."
               + "<br><br>RIGHT CLICK on an existing center = delete that center point."
               + "<br><br>When finished, save the centers and exit." + "</html>"));
@@ -99,8 +101,7 @@ public class CenterPicker extends JFrame {
    * default or needed values, and prepares the map for user
    * commands.
    *
-   * @param java
-   *        .lang.String mapName name of map file
+   * @param mapName Name of map file.
    */
   public CenterPicker(final String mapName) {
     super("Center Picker");
@@ -113,7 +114,8 @@ public class CenterPicker extends JFrame {
       file = new File(new File(mapName).getParent() + File.separator + "polygons.txt");
     }
     if (file.exists() && JOptionPane.showConfirmDialog(new JPanel(),
-        "A polygons.txt file was found in the map's folder, do you want to use the file to supply the territories names?",
+        "A polygons.txt file was found in the map's folder, do you want to use the file to supply the territories "
+            + "names?",
         "File Suggestion", 1) == 0) {
       try {
         m_polygons = PointFileReaderWriter.readOneToManyPolygons(new FileInputStream(file.getPath()));

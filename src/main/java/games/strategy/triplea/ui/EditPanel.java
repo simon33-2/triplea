@@ -454,16 +454,22 @@ public class EditPanel extends ActionPanel {
         final JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
         panel.setBorder(BorderFactory.createEmptyBorder());
-        final JLabel helpText =
-            new JLabel(
-                "<html><b>Click the buttons inside the relationship squares to change the relationships between players.</b>"
-                    + "<br />Please note that none of this is validated by the engine or map, so the results are not guaranteed to be perfectly what you expect."
-                    + "<br />In addition, any maps that use triggers could be royalled messed up by changing editing political relationships:"
-                    + "<br /><em>Example: Take a map where America gets some benefit (like upgraded factories) after it goes to war for the first time, "
-                    + "<br />and the american player accidentally clicked to go to war, and now wishes to undo that change. Changing America from being at war to "
-                    + "<br />not being at war will not undo the benefit if it has already happened. And later, when America goes to war (for real this time), that "
-                    + "<br />benefit may or may not be applied a second time, totally depending on how the map was coded (and this is not the map's fault either, "
-                    + "<br />since you are using edit mode).  So if you change anything here, be on the look out for unintended consequences!</em></html>");
+        final JLabel helpText = new JLabel("<html><b>Click the buttons inside the relationship squares to change the "
+            + "relationships between players.</b>"
+            + "<br />Please note that none of this is validated by the engine or map, so the results are not "
+            + "guaranteed to be perfectly what you expect."
+            + "<br />In addition, any maps that use triggers could be royalled messed up by changing editing political "
+            + "relationships:"
+            + "<br /><em>Example: Take a map where America gets some benefit (like upgraded factories) after it goes "
+            + "to war for the first time, "
+            + "<br />and the american player accidentally clicked to go to war, and now wishes to undo that change. "
+            + "Changing America from being at war to "
+            + "<br />not being at war will not undo the benefit if it has already happened. And later, when America "
+            + "goes to war (for real this time), that "
+            + "<br />benefit may or may not be applied a second time, totally depending on how the map was coded (and "
+            + "this is not the map's fault either, "
+            + "<br />since you are using edit mode).  So if you change anything here, be on the look out for "
+            + "unintended consequences!</em></html>");
         panel.add(helpText, BorderLayout.NORTH);
         final PoliticalStateOverview pui = new PoliticalStateOverview(getData(), m_frame.getUIContext(), true);
         panel.add(pui, BorderLayout.CENTER);
@@ -498,11 +504,11 @@ public class EditPanel extends ActionPanel {
     setBorder(new EmptyBorder(5, 5, 0, 0));
     add(m_actionLabel);
     final JButton performMove = new JButton(m_performMoveAction);
-    performMove
-        .setToolTipText(
-            "<html>When in Edit Mode, you can perform special actions according to whatever phase you are in, by switching back to the 'Action' tab.<br /> "
-                + "So if you are in the 'Move' phase, you can move units virtually anywhere, because Edit Mode turns off the movement validation.<br /> "
-                + "You can use 'Action' tab during Edit Mode to do things not available by the other edit buttons.</html>");
+    performMove.setToolTipText("<html>When in Edit Mode, you can perform special actions according to whatever phase "
+        + "you are in, by switching back to the 'Action' tab.<br /> "
+        + "So if you are in the 'Move' phase, you can move units virtually anywhere, because Edit Mode turns off the "
+        + "movement validation.<br /> "
+        + "You can use 'Action' tab during Edit Mode to do things not available by the other edit buttons.</html>");
     add(performMove);
     add(new JButton(m_addUnitsAction));
     add(new JButton(m_delUnitsAction));
@@ -666,15 +672,11 @@ public class EditPanel extends ActionPanel {
           // remove the last element
           m_selectedUnits.remove(new ArrayList<>(m_selectedUnits).get(m_selectedUnits.size() - 1));
         }
-      }
-      // user has clicked on a specific unit
-      else {
+      } else { // user has clicked on a specific unit
         // deselect all if control is down
         if (md.isControlDown() || t != m_selectedTerritory) {
           m_selectedUnits.removeAll(units);
-        }
-        // deselect one
-        else {
+        } else { // deselect one
           // remove those with the least movement first
           for (final Unit unit : units) {
             if (m_selectedUnits.contains(unit)) {
@@ -724,9 +726,7 @@ public class EditPanel extends ActionPanel {
         m_selectedUnits.addAll(t.getUnits().getUnits());
       } else if (md.isControlDown()) {
         m_selectedUnits.addAll(units);
-      }
-      // select one
-      else {
+      } else { // select one
         for (final Unit unit : units) {
           if (!m_selectedUnits.contains(unit)) {
             m_selectedUnits.add(unit);

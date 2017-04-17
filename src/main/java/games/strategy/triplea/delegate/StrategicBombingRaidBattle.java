@@ -61,11 +61,9 @@ public class StrategicBombingRaidBattle extends AbstractBattle implements Battle
    *        - game data
    * @param attacker
    *        - attacker PlayerID
-   * @param defender
-   *        - defender PlayerID
    * @param battleTracker
    *        - BattleTracker
-   **/
+   */
   public StrategicBombingRaidBattle(final Territory battleSite, final GameData data, final PlayerID attacker,
       final BattleTracker battleTracker) {
     super(battleSite, attacker, battleTracker, true, BattleType.BOMBING_RAID, data);
@@ -352,12 +350,16 @@ public class StrategicBombingRaidBattle extends AbstractBattle implements Battle
     public void execute(final ExecutionStack stack, final IDelegateBridge bridge) {
       final boolean isEditMode = BaseEditDelegate.getEditMode(bridge.getData());
       for (final String currentTypeAA : m_AAtypes) {
-        final Collection<Unit> currentPossibleAA                = Match.getMatches(m_defendingAA, Matches.UnitIsAAofTypeAA(currentTypeAA));
-        final Set<UnitType> targetUnitTypesForThisTypeAA        = UnitAttachment.get(currentPossibleAA.iterator().next().getType()).getTargetsAA(m_data);
-        final Set<UnitType> airborneTypesTargettedToo           = TechAbilityAttachment.getAirborneTargettedByAA(m_attacker, m_data).get(currentTypeAA);
+        final Collection<Unit> currentPossibleAA =
+            Match.getMatches(m_defendingAA, Matches.UnitIsAAofTypeAA(currentTypeAA));
+        final Set<UnitType> targetUnitTypesForThisTypeAA =
+            UnitAttachment.get(currentPossibleAA.iterator().next().getType()).getTargetsAA(m_data);
+        final Set<UnitType> airborneTypesTargettedToo =
+            TechAbilityAttachment.getAirborneTargettedByAA(m_attacker, m_data).get(currentTypeAA);
         if (determineAttackers) {
-          validAttackingUnitsForThisRoll = Match.getMatches(m_attackingUnits, new CompositeMatchOr<>(Matches.unitIsOfTypes(targetUnitTypesForThisTypeAA),
-                    new CompositeMatchAnd<Unit>(Matches.UnitIsAirborne, Matches.unitIsOfTypes(airborneTypesTargettedToo))));
+          validAttackingUnitsForThisRoll = Match.getMatches(m_attackingUnits, new CompositeMatchOr<>(
+              Matches.unitIsOfTypes(targetUnitTypesForThisTypeAA),
+              new CompositeMatchAnd<Unit>(Matches.UnitIsAirborne, Matches.unitIsOfTypes(airborneTypesTargettedToo))));
         }
 
         final IExecutable roll = new IExecutable() {
