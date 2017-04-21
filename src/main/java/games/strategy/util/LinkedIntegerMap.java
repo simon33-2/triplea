@@ -43,8 +43,6 @@ public class LinkedIntegerMap<T> implements Cloneable, Serializable {
   /**
    * This will make a new IntegerMap.
    * The Objects will be linked, but the integers mapped to them will not be linked.
-   *
-   * @param integerMap
    */
   public LinkedIntegerMap(final LinkedIntegerMap<T> integerMap) {
     /*
@@ -60,8 +58,6 @@ public class LinkedIntegerMap<T> implements Cloneable, Serializable {
   /**
    * This will make a new IntegerMap.
    * The Objects will be linked, but the integers mapped to them will not be linked.
-   *
-   * @param integerMap
    */
   public LinkedIntegerMap(final LinkedIntegerMap<T>[] integerMaps) {
     m_values = new LinkedHashMap<>();
@@ -128,7 +124,6 @@ public class LinkedIntegerMap<T> implements Cloneable, Serializable {
    * Can be used to divide all numbers, if given a fractional double
    * (ie: to divide by 2, use 0.5 as the double)
    *
-   * @param multiplyBy
    * @param RoundType
    *        (1 = floor, 2 = round, 3 = ceil)
    */
@@ -269,7 +264,7 @@ public class LinkedIntegerMap<T> implements Cloneable, Serializable {
   }
 
   /**
-   * @return the sum of all keys.
+   * @return The sum of all keys.
    */
   public int totalValues() {
     int sum = 0;
