@@ -101,6 +101,24 @@ public class MustFightBattle extends DependentBattle implements BattleStepString
     }
   }
 
+  @Override
+  public Collection<Territory> getAttackingFrom() {
+    return m_attackingFrom;
+  }
+
+  @Override
+  public Map<Territory, Collection<Unit>> getAttackingFromMap() {
+    return m_attackingFromMap;
+  }
+
+  /**
+   * @return territories where there are amphibious attacks.
+   */
+  @Override
+  public Collection<Territory> getAmphibiousAttackTerritories() {
+    return m_amphibiousAttackFrom;
+  }
+  
   public void resetDefendingUnits(final PlayerID attacker, final GameData data) {
     m_defendingUnits.clear();
     m_defendingUnits.addAll(m_battleSite.getUnits().getMatches(Matches.enemyUnit(attacker, data)));

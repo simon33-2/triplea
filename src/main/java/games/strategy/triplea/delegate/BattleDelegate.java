@@ -102,6 +102,32 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
     }
     m_battleTracker.fightAirRaidsAndStrategicBombing(m_bridge);
     m_battleTracker.fightAutoKills(m_bridge);
+    int amphibCount = 0;
+    IBattle lastAmphib = null;
+    for( final Territory t : m_battleTracker.getPendingBattleSites(false) ) {  // Loop through normal combats i.e. not bombing or air raid
+      final IBattle battle = m_battleTracker.getPendingBattle(t, false, BattleType.NORMAL);
+      if (!(battle instanceof MustFightBattle) ) {
+        continue;
+      }
+      
+      if( battle.isAmphibious() ) {
+        amphibCount++;
+        lastAmphib = battle;      // Otherwise store it to see if it can be fought later i.e. if there's only one
+      }
+    }
+
+    // Fight amphibious assault if there is one remaining. Fight naval battles in random order if prerequisites first.
+    if( amphibCount == 1 ) {
+      // are there battles that must occur first
+      for( final IBattle seaBattle : m_battleTracker.getDependentOn( lastAmphib ) ) {
+        if( seaBattle instanceof MustFightBattle && seaBattle != null ) {
+          seaBattle.fight( m_bridge );
+        }
+      }
+      lastAmphib.fight( m_bridge );
+      
+    }
+    m_battleTracker.fightBattleIfOnlyOne(m_bridge);
   }
 
   /**
@@ -253,9 +279,9 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
   }
 
   /**
-   * Add bombardment units to battles.
+   * Add bombardment units to battles. Made public for test purposes only
    */
-  private void addBombardmentSources() {
+  void addBombardmentSources() {
     final PlayerID attacker = m_bridge.getPlayerID();
     final ITripleAPlayer remotePlayer = getRemotePlayer();
     final Match<Unit> ownedAndCanBombard =
