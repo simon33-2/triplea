@@ -240,50 +240,6 @@ public class RevisedTest {
   }
 
   @Test
-  public void testContinuedBattles() {
-    final PlayerID russians = GameDataTestUtil.russians(gameData);
-    final PlayerID germans = GameDataTestUtil.germans(gameData);
-    final ITestDelegateBridge bridge = getDelegateBridge(germans);
-    final MoveDelegate moveDelegate = (MoveDelegate) gameData.getDelegateList().getDelegate("move");
-    bridge.setStepName("CombatMove");
-    moveDelegate.setDelegateBridgeAndPlayer(bridge);
-    moveDelegate.start();
-    // set up battle
-    final Territory germany = gameData.getMap().getTerritory("Germany");
-    final Territory karelia = gameData.getMap().getTerritory("Karelia S.S.R.");
-    final Territory sz5 = gameData.getMap().getTerritory("5 Sea Zone");
-    gameData.performChange(ChangeFactory.removeUnits(sz5, sz5.getUnits().getUnits()));
-    final UnitType infantryType = GameDataTestUtil.infantry(gameData);
-    final UnitType subType = GameDataTestUtil.submarine(gameData);
-    final UnitType trnType = GameDataTestUtil.transport(gameData);
-    gameData.performChange(ChangeFactory.addUnits(sz5, subType.create(1, germans)));
-    gameData.performChange(ChangeFactory.addUnits(sz5, trnType.create(1, germans)));
-    gameData.performChange(ChangeFactory.addUnits(sz5, subType.create(1, russians)));
-    // submerge the russian sub
-    final TripleAUnit sub =
-        (TripleAUnit) Match.getMatches(sz5.getUnits().getUnits(), Matches.unitIsOwnedBy(russians)).iterator().next();
-    sub.setSubmerged(true);
-    // now move an infantry through the sz
-    String results =
-        moveDelegate.move(Match.getNMatches(germany.getUnits().getUnits(), 1, Matches.unitIsOfType(infantryType)),
-            gameData.getMap().getRoute(germany, sz5),
-            Match.getMatches(sz5.getUnits().getUnits(), Matches.unitIsOfType(trnType)));
-    assertNull(results);
-    results = moveDelegate.move(Match.getNMatches(sz5.getUnits().getUnits(), 1, Matches.unitIsOfType(infantryType)),
-        gameData.getMap().getRoute(sz5, karelia));
-    assertNull(results);
-    moveDelegate.end();
-    final BattleDelegate battle = (BattleDelegate) gameData.getDelegateList().getDelegate("battle");
-    battle.setDelegateBridgeAndPlayer(bridge);
-    battle.start();
-    final BattleTracker tracker = AbstractMoveDelegate.getBattleTracker(gameData);
-    // The battle should NOT be empty
-    assertTrue(tracker.hasPendingBattle(sz5, false));
-    assertFalse(tracker.getPendingBattle(sz5, false, null).isEmpty());
-    battle.end();
-  }
-
-  @Test
   public void testLoadAlliedTransports() {
     final PlayerID british = british(gameData);
     final PlayerID americans = americans(gameData);

@@ -265,57 +265,6 @@ public class AirThatCantLandUtilTest {
     assertEquals(expectedCountCanada, postCountInt);
   }
 
-  @Test
-  public void testCanLandNeighborLandWithRetreatedBattleV2() {
-    final PlayerID japanese = GameDataTestUtil.japanese(gameData);
-    final PlayerID americans = GameDataTestUtil.americans(gameData);
-    final ITestDelegateBridge bridge = getDelegateBridge(japanese);
-    // Get necessary sea zones and unit types for this test
-    final Territory sz_9 = gameData.getMap().getTerritory("9 Sea Zone");
-    final Territory eastCanada = gameData.getMap().getTerritory("Eastern Canada");
-    final Territory sz_11 = gameData.getMap().getTerritory("11 Sea Zone");
-    final UnitType subType = GameDataTestUtil.submarine(gameData);
-    final UnitType carrierType = GameDataTestUtil.carrier(gameData);
-    final UnitType fighterType = GameDataTestUtil.fighter(gameData);
-    final UnitType transportType = GameDataTestUtil.transport(gameData);
-    final UnitType infantryType = GameDataTestUtil.infantry(gameData);
-    // Add units for the test
-    gameData.performChange(ChangeFactory.addUnits(sz_11, subType.create(1, japanese)));
-    gameData.performChange(ChangeFactory.addUnits(sz_11, transportType.create(1, japanese)));
-    gameData.performChange(ChangeFactory.addUnits(sz_11, infantryType.create(1, japanese)));
-    gameData.performChange(ChangeFactory.addUnits(sz_9, carrierType.create(1, americans)));
-    gameData.performChange(ChangeFactory.addUnits(sz_9, fighterType.create(2, americans)));
-    // we need to initialize the original owner
-    final InitializationDelegate initDel =
-        (InitializationDelegate) gameData.getDelegateList().getDelegate("initDelegate");
-    initDel.setDelegateBridgeAndPlayer(bridge);
-    initDel.start();
-    initDel.end();
-    // Get total number of defending units before the battle
-    final int preCountCanada = eastCanada.getUnits().size();
-    final int preCountAirSz_9 = sz_9.getUnits().getMatches(Matches.UnitIsAir).size();
-    // now move to attack
-    final MoveDelegate moveDelegate = (MoveDelegate) gameData.getDelegateList().getDelegate("move");
-    bridge.setStepName("CombatMove");
-    moveDelegate.setDelegateBridgeAndPlayer(bridge);
-    moveDelegate.start();
-    moveDelegate.move(sz_11.getUnits().getUnits(), gameData.getMap().getRoute(sz_11, sz_9));
-    moveDelegate.move(sz_9.getUnits().getUnits(infantryType, 1), gameData.getMap().getRoute(sz_9, eastCanada));
-    moveDelegate.end();
-    // fight the battle
-    final BattleDelegate battle = (BattleDelegate) gameData.getDelegateList().getDelegate("battle");
-    battle.setDelegateBridgeAndPlayer(bridge);
-    battle.start();
-    bridge.setRandomSource(new ScriptedRandomSource(new int[] {0, 0, 0}));
-    bridge.setRemote(getDummyPlayer());
-    fight(battle, sz_9, false);
-    battle.end();
-    // Get the total number of units that should be left after the planes retreat
-    final int expectedCountCanada = eastCanada.getUnits().size();
-    final int postCountInt = preCountCanada + preCountAirSz_9;
-    // Compare the expected count with the actual number of units in landing zone
-    assertEquals(expectedCountCanada, postCountInt);
-  }
 
   /**
    * @deprecated Use a mock object instead.
