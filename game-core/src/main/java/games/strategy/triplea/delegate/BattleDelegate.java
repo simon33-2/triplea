@@ -67,6 +67,9 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
   private boolean needToRecordBattleStatistics = true;
   private boolean needToCheckDefendingPlanesCanLand = true;
   private boolean needToCleanup = true;
+  private boolean needToCreateRockets = true;
+  private boolean needToFireRockets = true;
+  private RocketsFireHelper rocketHelper;
   private IBattle currentBattle = null;
 
   @Override
@@ -89,6 +92,10 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
       doScrambling();
       needToScramble = false;
     }
+    if (needToCreateRockets) {
+      rocketHelper = new RocketsFireHelper(bridge, getData(), bridge.getPlayerId());
+      needToCreateRockets = false;
+    }
     if (needToKamikazeSuicideAttacks) {
       doKamikazeSuicideAttacks();
       needToKamikazeSuicideAttacks = false;
@@ -102,6 +109,10 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
       needToAddBombardmentSources = false;
     }
     battleTracker.fightAirRaidsAndStrategicBombing(bridge);
+    if (needToFireRockets) {
+      rocketHelper.fireRockets();
+      needToFireRockets = false;
+    }
     battleTracker.fightDefenselessBattles(bridge);
     battleTracker.fightBattleIfOnlyOne(bridge);
   }
@@ -138,16 +149,18 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
     final BattleExtendedDelegateState state = new BattleExtendedDelegateState();
     state.superState = super.saveState();
     // add other variables to state here:
-    state.m_battleTracker = battleTracker;
-    state.m_needToInitialize = needToInitialize;
-    state.m_needToScramble = needToScramble;
-    state.m_needToKamikazeSuicideAttacks = needToKamikazeSuicideAttacks;
-    state.m_needToClearEmptyAirBattleAttacks = needToClearEmptyAirBattleAttacks;
-    state.m_needToAddBombardmentSources = needToAddBombardmentSources;
-    state.m_needToRecordBattleStatistics = needToRecordBattleStatistics;
-    state.m_needToCheckDefendingPlanesCanLand = needToCheckDefendingPlanesCanLand;
-    state.m_needToCleanup = needToCleanup;
-    state.m_currentBattle = currentBattle;
+    state.battleTracker = battleTracker;
+    state.needToInitialize = needToInitialize;
+    state.needToScramble = needToScramble;
+    state.needToCreateRockets = needToCreateRockets;
+    state.needToKamikazeSuicideAttacks = needToKamikazeSuicideAttacks;
+    state.needToClearEmptyAirBattleAttacks = needToClearEmptyAirBattleAttacks;
+    state.needToAddBombardmentSources = needToAddBombardmentSources;
+    state.needToFireRockets = needToFireRockets;
+    state.needToRecordBattleStatistics = needToRecordBattleStatistics;
+    state.needToCheckDefendingPlanesCanLand = needToCheckDefendingPlanesCanLand;
+    state.needToCleanup = needToCleanup;
+    state.currentBattle = currentBattle;
     return state;
   }
 
@@ -155,16 +168,18 @@ public class BattleDelegate extends BaseTripleADelegate implements IBattleDelega
   public void loadState(final Serializable state) {
     final BattleExtendedDelegateState s = (BattleExtendedDelegateState) state;
     super.loadState(s.superState);
-    battleTracker = s.m_battleTracker;
-    needToInitialize = s.m_needToInitialize;
-    needToScramble = s.m_needToScramble;
-    needToKamikazeSuicideAttacks = s.m_needToKamikazeSuicideAttacks;
-    needToClearEmptyAirBattleAttacks = s.m_needToClearEmptyAirBattleAttacks;
-    needToAddBombardmentSources = s.m_needToAddBombardmentSources;
-    needToRecordBattleStatistics = s.m_needToRecordBattleStatistics;
-    needToCheckDefendingPlanesCanLand = s.m_needToCheckDefendingPlanesCanLand;
-    needToCleanup = s.m_needToCleanup;
-    currentBattle = s.m_currentBattle;
+    battleTracker = s.battleTracker;
+    needToInitialize = s.needToInitialize;
+    needToScramble = s.needToScramble;
+    needToCreateRockets = s.needToCreateRockets;
+    needToKamikazeSuicideAttacks = s.needToKamikazeSuicideAttacks;
+    needToClearEmptyAirBattleAttacks = s.needToClearEmptyAirBattleAttacks;
+    needToAddBombardmentSources = s.needToAddBombardmentSources;
+    needToFireRockets = s.needToFireRockets;
+    needToRecordBattleStatistics = s.needToRecordBattleStatistics;
+    needToCheckDefendingPlanesCanLand = s.needToCheckDefendingPlanesCanLand;
+    needToCleanup = s.needToCleanup;
+    currentBattle = s.currentBattle;
   }
 
   @Override
